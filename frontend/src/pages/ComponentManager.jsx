@@ -234,7 +234,7 @@ const ComponentManager = () => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent data-testid="delete-dialog">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Component</AlertDialogTitle>
             <AlertDialogDescription>
@@ -242,10 +242,11 @@ const ComponentManager = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="cancel-delete-btn">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => handleDelete(componentToDelete?.id)}
               className="bg-red-600 hover:bg-red-700"
+              data-testid="confirm-delete-btn"
             >
               Delete
             </AlertDialogAction>
