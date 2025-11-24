@@ -125,22 +125,27 @@ const StageCalculator = () => {
     ctx.fill();
     ctx.stroke();
 
-    // Add dimension labels
+    // Add dimension labels with unit
     ctx.fillStyle = '#1e293b';
     ctx.font = 'bold 14px Inter';
     ctx.textAlign = 'center';
     
+    // Display values in user's chosen unit
+    const displayWidth = isMetric ? width : metersToFeet(width).toFixed(1);
+    const displayDepth = isMetric ? depth : metersToFeet(depth).toFixed(1);
+    const displayHeight = isMetric ? height : metersToFeet(height).toFixed(1);
+    
     // Width label
     const widthMid = [(isoVertices[4][0] + isoVertices[5][0]) / 2, isoVertices[4][1] - 20];
-    ctx.fillText(`${width}m`, widthMid[0], widthMid[1]);
+    ctx.fillText(`${displayWidth}${unit}`, widthMid[0], widthMid[1]);
     
     // Depth label
     const depthMid = [(isoVertices[5][0] + isoVertices[6][0]) / 2, isoVertices[5][1] - 20];
-    ctx.fillText(`${depth}m`, depthMid[0], depthMid[1]);
+    ctx.fillText(`${displayDepth}${unit}`, depthMid[0], depthMid[1]);
     
     // Height label
     const heightMid = [isoVertices[5][0] + 30, (isoVertices[5][1] + isoVertices[1][1]) / 2];
-    ctx.fillText(`${height}m`, heightMid[0], heightMid[1]);
+    ctx.fillText(`${displayHeight}${unit}`, heightMid[0], heightMid[1]);
 
     // Add grid on top face
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
