@@ -135,7 +135,7 @@ const CalculationHistory = () => {
                               <TableRow key={partIndex}>
                                 <TableCell className="font-medium">{part.name}</TableCell>
                                 <TableCell className="text-right">{part.quantity_used}</TableCell>
-                                <TableCell className="text-right">${part.total_price.toFixed(2)}</TableCell>
+                                <TableCell className="text-right">£{part.total_price.toFixed(2)}</TableCell>
                                 <TableCell className="text-right">{part.total_weight.toFixed(2)} kg</TableCell>
                               </TableRow>
                             ))}
