@@ -290,8 +290,8 @@ async def calculate_stage(request: CalculationRequest):
                     })
                     break
         
-        # Step 3: Add frame/beam components (if available)
-        frame_components = [c for c in components if 'frame' in c['name'].lower() or 'beam' in c['name'].lower()]
+        # Step 3: Add frame/beam components (if available, excluding connectors)
+        frame_components = [c for c in components if ('frame' in c['name'].lower() or 'beam' in c['name'].lower()) and 'connector' not in c['name'].lower() and 'bracket' not in c['name'].lower()]
         if frame_components and actual_width > 0 and actual_depth > 0:
             perimeter = 2 * (actual_width + actual_depth)
             
