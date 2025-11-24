@@ -45,6 +45,8 @@ class Component(BaseModel):
     quantity: int
     price: float
     weight: float
+    width: float  # Width dimension in meters
+    depth: float  # Depth dimension in meters
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ComponentCreate(BaseModel):
@@ -53,6 +55,8 @@ class ComponentCreate(BaseModel):
     quantity: int
     price: float
     weight: float
+    width: float
+    depth: float
 
 class CalculationRequest(BaseModel):
     width: float
