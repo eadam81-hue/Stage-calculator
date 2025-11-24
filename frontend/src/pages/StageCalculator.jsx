@@ -34,6 +34,15 @@ const StageCalculator = () => {
   const [isMetric, setIsMetric] = useState(true); // true = meters, false = feet
   const [calculating, setCalculating] = useState(false);
   const [result, setResult] = useState(null);
+  const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
+  const [savingQuote, setSavingQuote] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [quoteForm, setQuoteForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    notes: ""
+  });
 
   // Conversion functions
   const metersToFeet = (meters) => meters * 3.28084;
