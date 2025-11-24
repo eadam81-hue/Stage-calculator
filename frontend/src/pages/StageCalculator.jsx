@@ -241,16 +241,42 @@ const StageCalculator = () => {
                   <Ruler className="h-5 w-5 text-cyan-600" />
                   Stage Dimensions
                 </CardTitle>
-                <CardDescription>Enter your stage measurements in meters</CardDescription>
+                <CardDescription>Enter your stage measurements</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Unit Toggle */}
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                  <div>
+                    <Label htmlFor="unit-toggle" className="text-base font-medium">
+                      Unit System
+                    </Label>
+                    <p className="text-sm text-slate-500 mt-1">
+                      {isMetric ? "Metric (meters)" : "Imperial (feet)"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-sm font-medium ${isMetric ? 'text-cyan-600' : 'text-slate-400'}`}>
+                      Meters
+                    </span>
+                    <Switch
+                      id="unit-toggle"
+                      checked={!isMetric}
+                      onCheckedChange={(checked) => setIsMetric(!checked)}
+                      data-testid="unit-toggle"
+                    />
+                    <span className={`text-sm font-medium ${!isMetric ? 'text-cyan-600' : 'text-slate-400'}`}>
+                      Feet
+                    </span>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="width">Width (m)</Label>
+                  <Label htmlFor="width">Width ({unitLabel})</Label>
                   <Input
                     id="width"
                     type="number"
-                    step="0.1"
-                    min="0.1"
+                    step={isMetric ? "0.1" : "1"}
+                    min={isMetric ? "0.1" : "1"}
                     value={dimensions.width}
                     onChange={(e) => setDimensions({ ...dimensions, width: e.target.value })}
                     data-testid="width-input"
@@ -258,12 +284,12 @@ const StageCalculator = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="depth">Depth (m)</Label>
+                  <Label htmlFor="depth">Depth ({unitLabel})</Label>
                   <Input
                     id="depth"
                     type="number"
-                    step="0.1"
-                    min="0.1"
+                    step={isMetric ? "0.1" : "1"}
+                    min={isMetric ? "0.1" : "1"}
                     value={dimensions.depth}
                     onChange={(e) => setDimensions({ ...dimensions, depth: e.target.value })}
                     data-testid="depth-input"
@@ -271,12 +297,12 @@ const StageCalculator = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="height">Height (m)</Label>
+                  <Label htmlFor="height">Height ({unitLabel})</Label>
                   <Input
                     id="height"
                     type="number"
-                    step="0.1"
-                    min="0.1"
+                    step={isMetric ? "0.1" : "1"}
+                    min={isMetric ? "0.1" : "1"}
                     value={dimensions.height}
                     onChange={(e) => setDimensions({ ...dimensions, height: e.target.value })}
                     data-testid="height-input"
