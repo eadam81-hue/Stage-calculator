@@ -498,7 +498,7 @@ const StageCalculator = () => {
                       <h3 className="text-sm font-semibold text-amber-900">Dimension Adjustment</h3>
                       <p className="mt-1 text-sm text-amber-800">
                         The requested size ({result.requested_width}m × {result.requested_depth}m) isn't achievable with standard stage components. 
-                        I've calculated the closest dimensions based on available stock: <strong>{result.width}m × {result.depth}m</strong>.
+                        I've calculated the closest dimensions based on available stock: <strong>{result.width.toFixed(2)}m × {result.depth.toFixed(2)}m</strong>.
                       </p>
                       <p className="mt-2 text-sm text-amber-800">
                         Contact one of the team for a custom quote if this design doesn't meet your needs.
