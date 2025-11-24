@@ -76,10 +76,12 @@ class Calculation(BaseModel):
     model_config = ConfigDict(extra="ignore")
     
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    width: float
-    depth: float
+    width: float  # Actual achieved width
+    depth: float  # Actual achieved depth
     height: float
     location_type: str
+    requested_width: Optional[float] = None  # Original requested width
+    requested_depth: Optional[float] = None  # Original requested depth
     parts_list: List[CalculatedPart]
     total_price: float
     total_weight: float
