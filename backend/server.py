@@ -201,8 +201,7 @@ async def calculate_stage(request: CalculationRequest):
         # Sort components by area (largest first) for better fitting
         components_sorted = sorted(components, key=lambda x: x['width'] * x['depth'], reverse=True)
         
-        # Try to build the stage using available components
-        # This is a simplified "best fit" algorithm
+        # ONLY calculate deck/platform components - ignore height, legs, frames, connectors
         target_width = request.width
         target_depth = request.depth
         
@@ -210,118 +209,82 @@ async def calculate_stage(request: CalculationRequest):
         actual_width = 0
         actual_depth = 0
         
-        # Strategy: Fill width and depth with largest components first
-        # This is a greedy algorithm - can be improved for optimal fit
+        # Find ONLY deck/platform/panel components
+        deck_components = [c for c in components_sorted if 'deck' in c['name'].lower() or 'platform' in c['name'].lower() or 'panel' in c['name'].lower()]
         
-        # Step 1: Find deck/platform components
-        deck_components = [c for c in components_sorted if 'deck' in c['name'].lower() or 'platform' in c['name'].lower()]
+        if not deck_components:
+            raise HTTPException(status_code=400, detail="No deck/platform components found. Please upload deck components to build a stage.")
         
-        if deck_components:
-            # Try to fill the area with deck panels
-            for deck in deck_components:
-                deck_width = deck['width']
-                deck_depth = deck['depth']
+        # Try to build the platform using available deck panels
+        # We'll try different combinations to get closest to target
+        best_combination = None
+        best_diff = float('inf')
+        
+        # Try each deck type
+        for deck in deck_components:
+            deck_width = deck['width']
+            deck_depth = deck['depth']
+            
+            # Try both orientations
+            orientations = [
+                (deck_width, deck_depth),  # Normal
+                (deck_depth, deck_width)   # Rotated 90°
+            ]
+            
+            for panel_w, panel_d in orientations:
+                # Calculate how many panels fit
+                panels_across = int(target_width / panel_w)
+                panels_deep = int(target_depth / panel_d)
                 
-                # Calculate how many panels fit in width and depth
-                panels_width = int(target_width / deck_width)
-                panels_depth = int(target_depth / deck_depth)
-                
-                # Try both orientations
-                panels_needed_option1 = panels_width * panels_depth
-                actual_w1 = panels_width * deck_width
-                actual_d1 = panels_depth * deck_depth
-                
-                # Rotated orientation
-                panels_width_rot = int(target_width / deck_depth)
-                panels_depth_rot = int(target_depth / deck_width)
-                panels_needed_option2 = panels_width_rot * panels_depth_rot
-                actual_w2 = panels_width_rot * deck_depth
-                actual_d2 = panels_depth_rot * deck_width
-                
-                # Choose the orientation that gets closer to target
-                diff1 = abs(actual_w1 - target_width) + abs(actual_d1 - target_depth)
-                diff2 = abs(actual_w2 - target_width) + abs(actual_d2 - target_depth)
-                
-                if panels_needed_option1 > 0 and (diff1 <= diff2 or panels_needed_option2 == 0):
-                    panels_needed = min(panels_needed_option1, deck['quantity'])
-                    actual_width = actual_w1
-                    actual_depth = actual_d1
-                elif panels_needed_option2 > 0:
-                    panels_needed = min(panels_needed_option2, deck['quantity'])
-                    actual_width = actual_w2
-                    actual_depth = actual_d2
-                else:
-                    # Need at least 1 panel
-                    panels_needed = 1
-                    actual_width = deck_width
-                    actual_depth = deck_depth
-                
-                if panels_needed > 0:
-                    used_components.append({
-                        'component': deck,
-                        'quantity': panels_needed
-                    })
-                    break  # Use first deck type that fits
+                # Try adding one more in each direction to see if it gets closer
+                for add_w in [0, 1]:
+                    for add_d in [0, 1]:
+                        test_panels_across = panels_across + add_w
+                        test_panels_deep = panels_deep + add_d
+                        
+                        total_panels = test_panels_across * test_panels_deep
+                        
+                        # Check if we have enough in stock
+                        if total_panels > deck['quantity'] or total_panels == 0:
+                            continue
+                        
+                        test_width = test_panels_across * panel_w
+                        test_depth = test_panels_deep * panel_d
+                        
+                        # Calculate difference from target
+                        diff = abs(test_width - target_width) + abs(test_depth - target_depth)
+                        
+                        # Prefer not going over target dimensions
+                        if test_width > target_width or test_depth > target_depth:
+                            diff += 100  # Penalty for oversizing
+                        
+                        if diff < best_diff:
+                            best_diff = diff
+                            best_combination = {
+                                'component': deck,
+                                'quantity': total_panels,
+                                'width': test_width,
+                                'depth': test_depth,
+                                'panel_width': panel_w,
+                                'panel_depth': panel_d
+                            }
+        
+        if best_combination:
+            used_components.append({
+                'component': best_combination['component'],
+                'quantity': best_combination['quantity']
+            })
+            actual_width = best_combination['width']
+            actual_depth = best_combination['depth']
         else:
-            # No deck components found, use any component
-            if components_sorted:
-                comp = components_sorted[0]
-                quantity = 1
-                actual_width = comp['width']
-                actual_depth = comp['depth']
-                used_components.append({
-                    'component': comp,
-                    'quantity': quantity
-                })
-        
-        # Step 2: Add support legs (if available)
-        support_components = [c for c in components if 'support' in c['name'].lower() or 'leg' in c['name'].lower()]
-        if support_components and actual_width > 0 and actual_depth > 0:
-            # Rule: 1 support per 2m² of stage area, minimum 4 corners
-            stage_area = actual_width * actual_depth
-            supports_needed = max(4, int(stage_area / 2))
-            
-            for support in support_components:
-                supports_to_use = min(supports_needed, support['quantity'])
-                if supports_to_use > 0:
-                    used_components.append({
-                        'component': support,
-                        'quantity': supports_to_use
-                    })
-                    break
-        
-        # Step 3: Add frame/beam components (if available, excluding connectors)
-        frame_components = [c for c in components if ('frame' in c['name'].lower() or 'beam' in c['name'].lower()) and 'connector' not in c['name'].lower() and 'bracket' not in c['name'].lower()]
-        if frame_components and actual_width > 0 and actual_depth > 0:
-            perimeter = 2 * (actual_width + actual_depth)
-            
-            for frame in frame_components:
-                beam_length = max(frame['width'], frame['depth'])
-                if beam_length > 0:
-                    beams_needed = max(1, int(perimeter / beam_length))
-                    beams_to_use = min(beams_needed, frame['quantity'])
-                    if beams_to_use > 0:
-                        used_components.append({
-                            'component': frame,
-                            'quantity': beams_to_use
-                        })
-                        break
-        
-        # Step 4: Add connectors (if available)
-        connector_components = [c for c in components if 'connector' in c['name'].lower() or 'bracket' in c['name'].lower()]
-        if connector_components:
-            # Estimate 4-8 connectors per deck panel
-            total_deck_panels = sum(uc['quantity'] for uc in used_components if 'deck' in uc['component']['name'].lower())
-            connectors_needed = max(4, total_deck_panels * 4)
-            
-            for connector in connector_components:
-                connectors_to_use = min(connectors_needed, connector['quantity'])
-                if connectors_to_use > 0:
-                    used_components.append({
-                        'component': connector,
-                        'quantity': connectors_to_use
-                    })
-                    break
+            # Fallback: use at least 1 panel
+            deck = deck_components[0]
+            used_components.append({
+                'component': deck,
+                'quantity': 1
+            })
+            actual_width = deck['width']
+            actual_depth = deck['depth']
         
         # Build parts list
         parts_list = []
