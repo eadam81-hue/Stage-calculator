@@ -94,7 +94,7 @@ async def root():
 
 @api_router.post("/components/upload")
 async def upload_components(file: UploadFile = File(...)):
-    """Upload Excel file with components (Name, Quantity, Price, Weight)"""
+    """Upload Excel file with components (Name, SKU, Quantity, Price, Weight, Width, Depth)"""
     try:
         if not file.filename.endswith(('.xlsx', '.xls')):
             raise HTTPException(status_code=400, detail="Only Excel files are allowed")
@@ -112,18 +112,28 @@ async def upload_components(file: UploadFile = File(...)):
             try:
                 if not any(row):  # Skip empty rows
                     continue
-                    
-                name, quantity, price, weight = row[0], row[1], row[2], row[3]
                 
-                if not all([name, quantity is not None, price is not None, weight is not None]):
-                    errors.append(f"Row {row_idx}: Missing required fields")
+                # Extract values: Name, SKU, Quantity, Price, Weight, Width, Depth
+                name = row[0]
+                sku = row[1] if len(row) > 1 else None
+                quantity = row[2] if len(row) > 2 else None
+                price = row[3] if len(row) > 3 else None
+                weight = row[4] if len(row) > 4 else None
+                width = row[5] if len(row) > 5 else None
+                depth = row[6] if len(row) > 6 else None
+                
+                if not all([name, quantity is not None, price is not None, weight is not None, width is not None, depth is not None]):
+                    errors.append(f"Row {row_idx}: Missing required fields (Name, Quantity, Price, Weight, Width, Depth)")
                     continue
                 
                 component = Component(
                     name=str(name),
+                    sku=str(sku) if sku else None,
                     quantity=int(quantity),
                     price=float(price),
-                    weight=float(weight)
+                    weight=float(weight),
+                    width=float(width),
+                    depth=float(depth)
                 )
                 
                 doc = component.model_dump()
