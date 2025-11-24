@@ -220,6 +220,66 @@ const StageCalculator = () => {
     }
   };
 
+  const handleAddToCart = async () => {
+    if (!result) return;
+    
+    setAddingToCart(true);
+    try {
+      const cartItems = result.parts_list.map(part => ({
+        sku: part.sku || null,
+        name: part.name,
+        quantity: part.quantity_used,
+        price: part.unit_price,
+        weight: part.unit_weight
+      }));
+
+      const response = await axios.post(`${API}/cart/add`, {
+        items: cartItems,
+        calculation_id: result.id
+      });
+
+      toast.success(`Added ${response.data.total_items} items to cart (£${response.data.total_price.toFixed(2)})`);
+    } catch (error) {
+      console.error("Cart error:", error);
+      toast.error("Failed to add to cart");
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
+  const handleSaveQuote = async () => {
+    if (!result) return;
+    
+    if (!quoteForm.name || !quoteForm.email) {
+      toast.error("Please fill in name and email");
+      return;
+    }
+
+    setSavingQuote(true);
+    try {
+      const response = await axios.post(`${API}/quote/save`, {
+        calculation_id: result.id,
+        customer_name: quoteForm.name,
+        customer_email: quoteForm.email,
+        customer_phone: quoteForm.phone || null,
+        notes: quoteForm.notes || null
+      });
+
+      toast.success("Quote saved successfully!");
+      
+      // Download PDF
+      window.open(`${API}/quote/${response.data.quote_id}/pdf`, '_blank');
+      
+      setQuoteDialogOpen(false);
+      setQuoteForm({ name: "", email: "", phone: "", notes: "" });
+    } catch (error) {
+      console.error("Quote error:", error);
+      toast.error("Failed to save quote");
+    } finally {
+      setSavingQuote(false);
+    }
+  };
+
   return (
     <div className="min-h-screen py-8 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
