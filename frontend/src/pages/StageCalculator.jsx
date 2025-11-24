@@ -41,7 +41,7 @@ const StageCalculator = () => {
   const areaUnit = isMetric ? 'm²' : 'ft²';
   const volumeUnit = isMetric ? 'm³' : 'ft³';
 
-  const drawStage = (width, depth, height) => {
+  const drawStage = (width, depth, height, unit = 'm') => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -52,8 +52,13 @@ const StageCalculator = () => {
     // Clear canvas
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
+    // Use meter values for calculations
+    const widthM = width;
+    const depthM = depth;
+    const heightM = height;
+
     // Calculate scaling factor
-    const maxDim = Math.max(width, depth, height);
+    const maxDim = Math.max(widthM, depthM, heightM);
     const scale = Math.min(canvasWidth, canvasHeight) * 0.4 / maxDim;
 
     // Isometric projection parameters
