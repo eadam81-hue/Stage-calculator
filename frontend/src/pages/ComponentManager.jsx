@@ -145,11 +145,13 @@ const ComponentManager = () => {
             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-900 font-medium mb-2">Excel File Format:</p>
               <div className="text-sm text-blue-800">
-                <p>• Row 1: Headers (Name, Quantity, Price, Weight)</p>
+                <p>• Row 1: Headers (Name, SKU, Quantity, Price, Weight, Width, Depth)</p>
                 <p>• Row 2+: Your component data</p>
+                <p>• Dimensions (Width, Depth) in meters</p>
+                <p>• Price in £ Sterling</p>
                 <p className="mt-2 flex items-center gap-2">
                   <Download className="h-4 w-4" />
-                  Example: Stage Deck | 50 | 125.00 | 45.5
+                  Example: Stage Deck Panel | SDK-001 | 50 | 125.00 | 45.5 | 2.44 | 1.22
                 </p>
               </div>
             </div>
