@@ -518,9 +518,136 @@ const StageCalculator = () => {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Action Buttons */}
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={addingToCart}
+                  className="flex-1 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600"
+                  size="lg"
+                  data-testid="add-to-cart-btn"
+                >
+                  {addingToCart ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="mr-2 h-5 w-5" />
+                      Add Entire Stage to Cart (£{result.total_price.toFixed(2)})
+                    </>
+                  )}
+                </Button>
+                
+                <Button
+                  onClick={() => setQuoteDialogOpen(true)}
+                  variant="outline"
+                  size="lg"
+                  data-testid="save-quote-btn"
+                >
+                  <Save className="mr-2 h-5 w-5" />
+                  Save Quote
+                </Button>
+              </div>
+
+              <p className="text-sm text-slate-500 text-center mt-3">
+                Add all components to your shopping cart or save this quote for later
+              </p>
             </CardContent>
           </Card>
         )}
+
+        {/* Quote Dialog */}
+        <Dialog open={quoteDialogOpen} onOpenChange={setQuoteDialogOpen}>
+          <DialogContent data-testid="quote-dialog">
+            <DialogHeader>
+              <DialogTitle>Save Your Quote</DialogTitle>
+              <DialogDescription>
+                Enter your details to save this quote and receive a PDF copy
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="quote-name">Name *</Label>
+                <Input
+                  id="quote-name"
+                  value={quoteForm.name}
+                  onChange={(e) => setQuoteForm({ ...quoteForm, name: e.target.value })}
+                  placeholder="John Smith"
+                  data-testid="quote-name-input"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="quote-email">Email *</Label>
+                <Input
+                  id="quote-email"
+                  type="email"
+                  value={quoteForm.email}
+                  onChange={(e) => setQuoteForm({ ...quoteForm, email: e.target.value })}
+                  placeholder="john@example.com"
+                  data-testid="quote-email-input"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="quote-phone">Phone (optional)</Label>
+                <Input
+                  id="quote-phone"
+                  type="tel"
+                  value={quoteForm.phone}
+                  onChange={(e) => setQuoteForm({ ...quoteForm, phone: e.target.value })}
+                  placeholder="+44 20 1234 5678"
+                  data-testid="quote-phone-input"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="quote-notes">Additional Notes (optional)</Label>
+                <Input
+                  id="quote-notes"
+                  value={quoteForm.notes}
+                  onChange={(e) => setQuoteForm({ ...quoteForm, notes: e.target.value })}
+                  placeholder="Any special requirements..."
+                  data-testid="quote-notes-input"
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setQuoteDialogOpen(false)}
+                data-testid="quote-cancel-btn"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveQuote}
+                disabled={savingQuote}
+                data-testid="quote-save-btn"
+              >
+                {savingQuote ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Save & Download PDF
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  );
       </div>
     </div>
   );
