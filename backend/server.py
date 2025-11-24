@@ -307,6 +307,257 @@ async def get_calculations():
     return calculations
 
 
+# Cart Models and Endpoints
+class CartItem(BaseModel):
+    sku: Optional[str] = None
+    name: str
+    quantity: int
+    price: float
+    weight: float
+
+class AddToCartRequest(BaseModel):
+    items: List[CartItem]
+    calculation_id: str
+
+class Cart(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    items: List[CartItem]
+    total_price: float
+    total_weight: float
+    calculation_id: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@api_router.post("/cart/add")
+async def add_to_cart(request: AddToCartRequest):
+    """Add calculation parts to cart"""
+    try:
+        total_price = sum(item.price * item.quantity for item in request.items)
+        total_weight = sum(item.weight * item.quantity for item in request.items)
+        
+        cart = Cart(
+            items=request.items,
+            total_price=total_price,
+            total_weight=total_weight,
+            calculation_id=request.calculation_id
+        )
+        
+        doc = cart.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        doc['items'] = [item.model_dump() for item in request.items]
+        
+        await db.carts.insert_one(doc)
+        
+        return {
+            "success": True,
+            "cart_id": cart.id,
+            "message": f"Added {len(request.items)} items to cart",
+            "total_price": total_price,
+            "total_items": sum(item.quantity for item in request.items)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error adding to cart: {str(e)}")
+
+
+@api_router.get("/cart/{cart_id}")
+async def get_cart(cart_id: str):
+    """Retrieve cart by ID"""
+    cart = await db.carts.find_one({"id": cart_id}, {"_id": 0})
+    
+    if not cart:
+        raise HTTPException(status_code=404, detail="Cart not found")
+    
+    if isinstance(cart['created_at'], str):
+        cart['created_at'] = datetime.fromisoformat(cart['created_at'])
+    
+    return cart
+
+
+# Quote Models and Endpoints
+class SaveQuoteRequest(BaseModel):
+    calculation_id: str
+    customer_name: str
+    customer_email: EmailStr
+    customer_phone: Optional[str] = None
+    notes: Optional[str] = None
+
+class Quote(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    calculation_id: str
+    customer_name: str
+    customer_email: str
+    customer_phone: Optional[str] = None
+    notes: Optional[str] = None
+    stage_width: float
+    stage_depth: float
+    stage_height: float
+    location_type: str
+    parts_list: List[CalculatedPart]
+    total_price: float
+    total_weight: float
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@api_router.post("/quote/save")
+async def save_quote(request: SaveQuoteRequest):
+    """Save quote with customer details"""
+    try:
+        # Get the calculation
+        calc = await db.calculations.find_one({"id": request.calculation_id}, {"_id": 0})
+        
+        if not calc:
+            raise HTTPException(status_code=404, detail="Calculation not found")
+        
+        quote = Quote(
+            calculation_id=request.calculation_id,
+            customer_name=request.customer_name,
+            customer_email=request.customer_email,
+            customer_phone=request.customer_phone,
+            notes=request.notes,
+            stage_width=calc['width'],
+            stage_depth=calc['depth'],
+            stage_height=calc['height'],
+            location_type=calc['location_type'],
+            parts_list=calc['parts_list'],
+            total_price=calc['total_price'],
+            total_weight=calc['total_weight']
+        )
+        
+        doc = quote.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        
+        await db.quotes.insert_one(doc)
+        
+        return {
+            "success": True,
+            "quote_id": quote.id,
+            "message": "Quote saved successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving quote: {str(e)}")
+
+
+@api_router.get("/quote/{quote_id}/pdf")
+async def download_quote_pdf(quote_id: str):
+    """Generate and download quote as PDF"""
+    try:
+        quote = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
+        
+        if not quote:
+            raise HTTPException(status_code=404, detail="Quote not found")
+        
+        # Create PDF in memory
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        # Title
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#0891b2'),
+            spaceAfter=30,
+            alignment=TA_CENTER
+        )
+        elements.append(Paragraph("Stage Builder Quote", title_style))
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Customer Details
+        elements.append(Paragraph(f"<b>Customer:</b> {quote['customer_name']}", styles['Normal']))
+        elements.append(Paragraph(f"<b>Email:</b> {quote['customer_email']}", styles['Normal']))
+        if quote.get('customer_phone'):
+            elements.append(Paragraph(f"<b>Phone:</b> {quote['customer_phone']}", styles['Normal']))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Stage Dimensions
+        elements.append(Paragraph("<b>Stage Specifications</b>", styles['Heading2']))
+        elements.append(Paragraph(f"Dimensions: {quote['stage_width']}m × {quote['stage_depth']}m × {quote['stage_height']}m", styles['Normal']))
+        elements.append(Paragraph(f"Location: {quote['location_type'].title()}", styles['Normal']))
+        elements.append(Paragraph(f"Total Area: {quote['stage_width'] * quote['stage_depth']:.2f}m²", styles['Normal']))
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Parts List Table
+        elements.append(Paragraph("<b>Parts List</b>", styles['Heading2']))
+        
+        table_data = [['Part Name', 'Quantity', 'Unit Price', 'Total Price', 'Weight']]
+        for part in quote['parts_list']:
+            table_data.append([
+                part['name'],
+                str(part['quantity_used']),
+                f"£{part['unit_price']:.2f}",
+                f"£{part['total_price']:.2f}",
+                f"{part['total_weight']:.2f}kg"
+            ])
+        
+        # Totals row
+        table_data.append([
+            'TOTAL',
+            '',
+            '',
+            f"£{quote['total_price']:.2f}",
+            f"{quote['total_weight']:.2f}kg"
+        ])
+        
+        table = Table(table_data, colWidths=[2.5*inch, 1*inch, 1*inch, 1*inch, 1*inch])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0891b2')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#e0f2fe')),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ]))
+        elements.append(table)
+        
+        if quote.get('notes'):
+            elements.append(Spacer(1, 0.3*inch))
+            elements.append(Paragraph("<b>Notes:</b>", styles['Normal']))
+            elements.append(Paragraph(quote['notes'], styles['Normal']))
+        
+        # Build PDF
+        doc.build(elements)
+        buffer.seek(0)
+        
+        return StreamingResponse(
+            buffer,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=quote_{quote_id}.pdf"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
+
+
+@api_router.get("/quotes", response_model=List[Quote])
+async def get_quotes():
+    """Get all saved quotes"""
+    quotes = await db.quotes.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    for quote in quotes:
+        if isinstance(quote['created_at'], str):
+            quote['created_at'] = datetime.fromisoformat(quote['created_at'])
+    
+    return quotes
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
