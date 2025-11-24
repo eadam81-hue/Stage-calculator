@@ -7,8 +7,16 @@ import { Label } from "../components/ui/label";
 import { Switch } from "../components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Separator } from "../components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Box, Ruler, Upload, History } from "lucide-react";
+import { Loader2, Box, Ruler, Upload, History, ShoppingCart, Download, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
