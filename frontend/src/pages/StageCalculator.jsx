@@ -23,8 +23,23 @@ const StageCalculator = () => {
     height: 1.5
   });
   const [isOutdoor, setIsOutdoor] = useState(false);
+  const [isMetric, setIsMetric] = useState(true); // true = meters, false = feet
   const [calculating, setCalculating] = useState(false);
   const [result, setResult] = useState(null);
+
+  // Conversion functions
+  const metersToFeet = (meters) => meters * 3.28084;
+  const feetToMeters = (feet) => feet / 3.28084;
+  
+  // Get display value based on unit system
+  const getDisplayValue = (valueInMeters) => {
+    return isMetric ? valueInMeters : metersToFeet(valueInMeters).toFixed(2);
+  };
+  
+  // Get unit label
+  const unitLabel = isMetric ? 'm' : 'ft';
+  const areaUnit = isMetric ? 'm²' : 'ft²';
+  const volumeUnit = isMetric ? 'm³' : 'ft³';
 
   const drawStage = (width, depth, height) => {
     const canvas = canvasRef.current;
