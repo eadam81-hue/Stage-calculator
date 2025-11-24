@@ -188,7 +188,7 @@ async def delete_all_components():
 
 @api_router.post("/calculate", response_model=Calculation)
 async def calculate_stage(request: CalculationRequest):
-    """Calculate stage parts based on dimensions and available components"""
+    """Calculate stage parts based on available components to match requested dimensions"""
     try:
         # Get all available components
         components = await db.components.find({}, {"_id": 0}).to_list(1000)
@@ -196,83 +196,159 @@ async def calculate_stage(request: CalculationRequest):
         if not components:
             raise HTTPException(status_code=400, detail="No components available. Please upload components first.")
         
-        # Calculate stage area and volume
-        stage_area = request.width * request.depth
-        stage_volume = request.width * request.depth * request.height
+        # Sort components by area (largest first) for better fitting
+        components_sorted = sorted(components, key=lambda x: x['width'] * x['depth'], reverse=True)
         
-        # Improved calculation algorithm using actual component dimensions
+        # Try to build the stage using available components
+        # This is a simplified "best fit" algorithm
+        target_width = request.width
+        target_depth = request.depth
+        
+        used_components = []
+        actual_width = 0
+        actual_depth = 0
+        
+        # Strategy: Fill width and depth with largest components first
+        # This is a greedy algorithm - can be improved for optimal fit
+        
+        # Step 1: Find deck/platform components
+        deck_components = [c for c in components_sorted if 'deck' in c['name'].lower() or 'platform' in c['name'].lower()]
+        
+        if deck_components:
+            # Try to fill the area with deck panels
+            for deck in deck_components:
+                deck_width = deck['width']
+                deck_depth = deck['depth']
+                
+                # Calculate how many panels fit in width and depth
+                panels_width = int(target_width / deck_width)
+                panels_depth = int(target_depth / deck_depth)
+                
+                # Try both orientations
+                panels_needed_option1 = panels_width * panels_depth
+                actual_w1 = panels_width * deck_width
+                actual_d1 = panels_depth * deck_depth
+                
+                # Rotated orientation
+                panels_width_rot = int(target_width / deck_depth)
+                panels_depth_rot = int(target_depth / deck_width)
+                panels_needed_option2 = panels_width_rot * panels_depth_rot
+                actual_w2 = panels_width_rot * deck_depth
+                actual_d2 = panels_depth_rot * deck_width
+                
+                # Choose the orientation that gets closer to target
+                diff1 = abs(actual_w1 - target_width) + abs(actual_d1 - target_depth)
+                diff2 = abs(actual_w2 - target_width) + abs(actual_d2 - target_depth)
+                
+                if panels_needed_option1 > 0 and (diff1 <= diff2 or panels_needed_option2 == 0):
+                    panels_needed = min(panels_needed_option1, deck['quantity'])
+                    actual_width = actual_w1
+                    actual_depth = actual_d1
+                elif panels_needed_option2 > 0:
+                    panels_needed = min(panels_needed_option2, deck['quantity'])
+                    actual_width = actual_w2
+                    actual_depth = actual_d2
+                else:
+                    # Need at least 1 panel
+                    panels_needed = 1
+                    actual_width = deck_width
+                    actual_depth = deck_depth
+                
+                if panels_needed > 0:
+                    used_components.append({
+                        'component': deck,
+                        'quantity': panels_needed
+                    })
+                    break  # Use first deck type that fits
+        else:
+            # No deck components found, use any component
+            if components_sorted:
+                comp = components_sorted[0]
+                quantity = 1
+                actual_width = comp['width']
+                actual_depth = comp['depth']
+                used_components.append({
+                    'component': comp,
+                    'quantity': quantity
+                })
+        
+        # Step 2: Add support legs (if available)
+        support_components = [c for c in components if 'support' in c['name'].lower() or 'leg' in c['name'].lower()]
+        if support_components and actual_width > 0 and actual_depth > 0:
+            # Rule: 1 support per 2m² of stage area, minimum 4 corners
+            stage_area = actual_width * actual_depth
+            supports_needed = max(4, int(stage_area / 2))
+            
+            for support in support_components:
+                supports_to_use = min(supports_needed, support['quantity'])
+                if supports_to_use > 0:
+                    used_components.append({
+                        'component': support,
+                        'quantity': supports_to_use
+                    })
+                    break
+        
+        # Step 3: Add frame/beam components (if available)
+        frame_components = [c for c in components if 'frame' in c['name'].lower() or 'beam' in c['name'].lower()]
+        if frame_components and actual_width > 0 and actual_depth > 0:
+            perimeter = 2 * (actual_width + actual_depth)
+            
+            for frame in frame_components:
+                beam_length = max(frame['width'], frame['depth'])
+                if beam_length > 0:
+                    beams_needed = max(1, int(perimeter / beam_length))
+                    beams_to_use = min(beams_needed, frame['quantity'])
+                    if beams_to_use > 0:
+                        used_components.append({
+                            'component': frame,
+                            'quantity': beams_to_use
+                        })
+                        break
+        
+        # Step 4: Add connectors (if available)
+        connector_components = [c for c in components if 'connector' in c['name'].lower() or 'bracket' in c['name'].lower()]
+        if connector_components:
+            # Estimate 4-8 connectors per deck panel
+            total_deck_panels = sum(uc['quantity'] for uc in used_components if 'deck' in uc['component']['name'].lower())
+            connectors_needed = max(4, total_deck_panels * 4)
+            
+            for connector in connector_components:
+                connectors_to_use = min(connectors_needed, connector['quantity'])
+                if connectors_to_use > 0:
+                    used_components.append({
+                        'component': connector,
+                        'quantity': connectors_to_use
+                    })
+                    break
+        
+        # Build parts list
         parts_list = []
         total_price = 0
         total_weight = 0
         
-        for component in components:
-            # For outdoor, use 20% more materials (weather protection factor)
-            multiplier = 1.2 if request.location_type == "outdoor" else 1.0
+        for item in used_components:
+            comp = item['component']
+            qty = item['quantity']
             
-            # Calculate quantity based on component type and actual dimensions
-            component_area = component['width'] * component['depth']
+            total_part_price = qty * comp['price']
+            total_part_weight = qty * comp['weight']
             
-            if "deck" in component['name'].lower() or "platform" in component['name'].lower() or "panel" in component['name'].lower():
-                # Calculate how many deck panels needed to cover stage area
-                if component_area > 0:
-                    panels_needed = stage_area / component_area
-                    quantity_used = max(1, int(panels_needed * multiplier))
-                else:
-                    quantity_used = max(1, int((stage_area / 4) * multiplier))
-                    
-            elif "support" in component['name'].lower() or "leg" in component['name'].lower():
-                # Calculate support legs based on stage area and height
-                # Rule: 1 support per 4m² of stage area, minimum 4 corners
-                supports_by_area = max(4, int((stage_area / 4) * multiplier))
-                # Adjust for height (taller stages need more support)
-                height_factor = max(1.0, request.height / 1.5)
-                quantity_used = int(supports_by_area * height_factor)
-                
-            elif "frame" in component['name'].lower() or "beam" in component['name'].lower():
-                # Calculate frame pieces based on perimeter and component length
-                perimeter = 2 * (request.width + request.depth)
-                beam_length = max(component['width'], component['depth'])
-                if beam_length > 0:
-                    quantity_used = max(1, int((perimeter / beam_length) * multiplier))
-                else:
-                    quantity_used = max(1, int((perimeter / 2) * multiplier))
-                    
-            elif "connector" in component['name'].lower() or "bracket" in component['name'].lower():
-                # Connectors needed at joints - estimate based on perimeter sections
-                perimeter = 2 * (request.width + request.depth)
-                sections = int(perimeter / 2)  # Every 2m needs connectors
-                quantity_used = max(4, int(sections * 2 * multiplier))  # 2 connectors per section
-                
-            else:
-                # Generic calculation for other components
-                if component_area > 0:
-                    quantity_used = max(1, int((stage_area / component_area) * multiplier))
-                else:
-                    quantity_used = max(1, int((stage_volume / 10) * multiplier))
+            parts_list.append(CalculatedPart(
+                name=comp['name'],
+                quantity_used=qty,
+                unit_price=comp['price'],
+                unit_weight=comp['weight'],
+                total_price=total_part_price,
+                total_weight=total_part_weight
+            ))
             
-            # Ensure we don't use more than available in inventory
-            quantity_used = min(quantity_used, component['quantity'])
-            
-            if quantity_used > 0:
-                total_part_price = quantity_used * component['price']
-                total_part_weight = quantity_used * component['weight']
-                
-                parts_list.append(CalculatedPart(
-                    name=component['name'],
-                    quantity_used=quantity_used,
-                    unit_price=component['price'],
-                    unit_weight=component['weight'],
-                    total_price=total_part_price,
-                    total_weight=total_part_weight
-                ))
-                
-                total_price += total_part_price
-                total_weight += total_part_weight
+            total_price += total_part_price
+            total_weight += total_part_weight
         
-        # Create calculation record
+        # Create calculation record with actual dimensions achieved
         calculation = Calculation(
-            width=request.width,
-            depth=request.depth,
+            width=actual_width if actual_width > 0 else request.width,
+            depth=actual_depth if actual_depth > 0 else request.depth,
             height=request.height,
             location_type=request.location_type,
             parts_list=parts_list,
@@ -284,6 +360,10 @@ async def calculate_stage(request: CalculationRequest):
         doc = calculation.model_dump()
         doc['created_at'] = doc['created_at'].isoformat()
         doc['parts_list'] = [part.model_dump() for part in parts_list]
+        doc['requested_width'] = request.width  # Store original request
+        doc['requested_depth'] = request.depth
+        doc['actual_width'] = actual_width if actual_width > 0 else request.width
+        doc['actual_depth'] = actual_depth if actual_depth > 0 else request.depth
         
         await db.calculations.insert_one(doc)
         
