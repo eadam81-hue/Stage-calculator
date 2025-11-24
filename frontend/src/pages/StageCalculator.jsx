@@ -648,9 +648,6 @@ const StageCalculator = () => {
       </div>
     </div>
   );
-      </div>
-    </div>
-  );
 };
 
 export default StageCalculator;
