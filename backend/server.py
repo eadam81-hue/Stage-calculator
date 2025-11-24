@@ -209,82 +209,113 @@ async def calculate_stage(request: CalculationRequest):
         actual_width = 0
         actual_depth = 0
         
-        # Find ONLY deck/platform/panel components
+        # Find ONLY deck/platform/panel components, sorted by area (largest first)
         deck_components = [c for c in components_sorted if 'deck' in c['name'].lower() or 'platform' in c['name'].lower() or 'panel' in c['name'].lower()]
         
         if not deck_components:
             raise HTTPException(status_code=400, detail="No deck/platform components found. Please upload deck components to build a stage.")
         
-        # Try to build the platform using available deck panels
-        # We'll try different combinations to get closest to target
-        best_combination = None
+        # STRATEGY: Use largest panels first, then fill gaps with smaller panels
+        
+        # Step 1: Use the LARGEST panels as the base
+        primary_deck = deck_components[0]  # Largest by area (e.g., 8x4)
+        primary_width = primary_deck['width']
+        primary_depth = primary_deck['depth']
+        
+        # Calculate how many primary panels fit
+        panels_across = int(target_width / primary_width)
+        panels_deep = int(target_depth / primary_depth)
+        
+        # Try adding one more row/column to get closer
+        test_configs = [
+            (panels_across, panels_deep),
+            (panels_across + 1, panels_deep),
+            (panels_across, panels_deep + 1),
+            (panels_across + 1, panels_deep + 1)
+        ]
+        
+        best_config = None
         best_diff = float('inf')
         
-        # Try each deck type
-        for deck in deck_components:
-            deck_width = deck['width']
-            deck_depth = deck['depth']
+        for pa, pd in test_configs:
+            total = pa * pd
+            if total == 0 or total > primary_deck['quantity']:
+                continue
             
-            # Try both orientations
-            orientations = [
-                (deck_width, deck_depth),  # Normal
-                (deck_depth, deck_width)   # Rotated 90°
-            ]
+            test_w = pa * primary_width
+            test_d = pd * primary_depth
             
-            for panel_w, panel_d in orientations:
-                # Calculate how many panels fit
-                panels_across = int(target_width / panel_w)
-                panels_deep = int(target_depth / panel_d)
-                
-                # Try adding one more in each direction to see if it gets closer
-                for add_w in [0, 1]:
-                    for add_d in [0, 1]:
-                        test_panels_across = panels_across + add_w
-                        test_panels_deep = panels_deep + add_d
-                        
-                        total_panels = test_panels_across * test_panels_deep
-                        
-                        # Check if we have enough in stock
-                        if total_panels > deck['quantity'] or total_panels == 0:
-                            continue
-                        
-                        test_width = test_panels_across * panel_w
-                        test_depth = test_panels_deep * panel_d
-                        
-                        # Calculate difference from target
-                        diff = abs(test_width - target_width) + abs(test_depth - target_depth)
-                        
-                        # Prefer not going over target dimensions
-                        if test_width > target_width or test_depth > target_depth:
-                            diff += 100  # Penalty for oversizing
-                        
-                        if diff < best_diff:
-                            best_diff = diff
-                            best_combination = {
-                                'component': deck,
-                                'quantity': total_panels,
-                                'width': test_width,
-                                'depth': test_depth,
-                                'panel_width': panel_w,
-                                'panel_depth': panel_d
-                            }
+            diff = abs(test_w - target_width) + abs(test_d - target_depth)
+            
+            # Slight penalty for oversizing
+            if test_w > target_width:
+                diff += 0.5
+            if test_d > target_depth:
+                diff += 0.5
+            
+            if diff < best_diff:
+                best_diff = diff
+                best_config = (pa, pd, test_w, test_d, total)
         
-        if best_combination:
+        if best_config:
+            panels_across, panels_deep, width_covered, depth_covered, primary_qty = best_config
+            
             used_components.append({
-                'component': best_combination['component'],
-                'quantity': best_combination['quantity']
+                'component': primary_deck,
+                'quantity': primary_qty
             })
-            actual_width = best_combination['width']
-            actual_depth = best_combination['depth']
+            
+            actual_width = width_covered
+            actual_depth = depth_covered
+            
+            # Step 2: Fill remaining gaps with smaller panels (if available and needed)
+            if len(deck_components) > 1:
+                remaining_width = target_width - width_covered
+                remaining_depth = target_depth - depth_covered
+                
+                # Check if we need to fill a gap
+                if remaining_width > 0.1 or remaining_depth > 0.1:
+                    # Try to use smaller panels to fill the gap
+                    for secondary_deck in deck_components[1:]:
+                        sec_width = secondary_deck['width']
+                        sec_depth = secondary_deck['depth']
+                        
+                        # Try to fill the depth gap (most common scenario)
+                        if remaining_depth > 0.1 and abs(sec_width - primary_width) < 0.1:
+                            # Same width as primary, different depth - perfect for filling depth gap
+                            if sec_depth <= remaining_depth + 0.1:
+                                # Calculate how many we need across the width
+                                sec_panels_needed = panels_across
+                                
+                                if sec_panels_needed <= secondary_deck['quantity']:
+                                    used_components.append({
+                                        'component': secondary_deck,
+                                        'quantity': sec_panels_needed
+                                    })
+                                    actual_depth += sec_depth
+                                    break
+                        
+                        # Try to fill the width gap
+                        elif remaining_width > 0.1 and abs(sec_depth - primary_depth) < 0.1:
+                            # Same depth as primary, different width
+                            if sec_width <= remaining_width + 0.1:
+                                sec_panels_needed = panels_deep
+                                
+                                if sec_panels_needed <= secondary_deck['quantity']:
+                                    used_components.append({
+                                        'component': secondary_deck,
+                                        'quantity': sec_panels_needed
+                                    })
+                                    actual_width += sec_width
+                                    break
         else:
-            # Fallback: use at least 1 panel
-            deck = deck_components[0]
+            # Fallback: use at least 1 primary panel
             used_components.append({
-                'component': deck,
+                'component': primary_deck,
                 'quantity': 1
             })
-            actual_width = deck['width']
-            actual_depth = deck['depth']
+            actual_width = primary_deck['width']
+            actual_depth = primary_deck['depth']
         
         # Build parts list
         parts_list = []
