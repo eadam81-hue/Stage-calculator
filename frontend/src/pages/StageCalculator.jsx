@@ -375,13 +375,13 @@ const StageCalculator = () => {
                   <div className="p-3 bg-slate-50 rounded-lg">
                     <p className="text-sm text-slate-500">Volume</p>
                     <p className="text-xl font-semibold text-slate-900">
-                      {(dimensions.width * dimensions.depth * dimensions.height).toFixed(2)}m³
+                      {(dimensions.width * dimensions.depth * dimensions.height).toFixed(2)}{volumeUnit}
                     </p>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-lg">
                     <p className="text-sm text-slate-500">Area</p>
                     <p className="text-xl font-semibold text-slate-900">
-                      {(dimensions.width * dimensions.depth).toFixed(2)}m²
+                      {(dimensions.width * dimensions.depth).toFixed(2)}{areaUnit}
                     </p>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-lg">
