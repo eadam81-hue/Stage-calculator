@@ -181,10 +181,15 @@ const StageCalculator = () => {
 
     setCalculating(true);
     try {
+      // Always send dimensions in meters to backend
+      const widthInMeters = isMetric ? parseFloat(dimensions.width) : feetToMeters(parseFloat(dimensions.width));
+      const depthInMeters = isMetric ? parseFloat(dimensions.depth) : feetToMeters(parseFloat(dimensions.depth));
+      const heightInMeters = isMetric ? parseFloat(dimensions.height) : feetToMeters(parseFloat(dimensions.height));
+      
       const response = await axios.post(`${API}/calculate`, {
-        width: parseFloat(dimensions.width),
-        depth: parseFloat(dimensions.depth),
-        height: parseFloat(dimensions.height),
+        width: widthInMeters,
+        depth: depthInMeters,
+        height: heightInMeters,
         location_type: isOutdoor ? "outdoor" : "indoor"
       });
       
