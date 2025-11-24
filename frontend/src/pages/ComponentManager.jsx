@@ -198,9 +198,11 @@ const ComponentManager = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
+                      <TableHead>SKU</TableHead>
                       <TableHead className="text-right">Quantity</TableHead>
-                      <TableHead className="text-right">Price ($)</TableHead>
+                      <TableHead className="text-right">Price (£)</TableHead>
                       <TableHead className="text-right">Weight (kg)</TableHead>
+                      <TableHead className="text-right">Dimensions (m)</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -208,9 +210,11 @@ const ComponentManager = () => {
                     {components.map((component) => (
                       <TableRow key={component.id} data-testid={`component-row-${component.id}`}>
                         <TableCell className="font-medium">{component.name}</TableCell>
+                        <TableCell className="text-slate-600">{component.sku || '-'}</TableCell>
                         <TableCell className="text-right">{component.quantity}</TableCell>
-                        <TableCell className="text-right">${component.price.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">£{component.price.toFixed(2)}</TableCell>
                         <TableCell className="text-right">{component.weight.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{component.width} × {component.depth}</TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="ghost"
