@@ -196,34 +196,61 @@ async def calculate_stage(request: CalculationRequest):
         if not components:
             raise HTTPException(status_code=400, detail="No components available. Please upload components first.")
         
-        # Calculate stage volume and area
-        volume = request.width * request.depth * request.height
-        area = request.width * request.depth
+        # Calculate stage area and volume
+        stage_area = request.width * request.depth
+        stage_volume = request.width * request.depth * request.height
         
-        # Basic calculation algorithm (user will provide actual equations later)
-        # This is a placeholder that distributes parts based on dimensions
+        # Improved calculation algorithm using actual component dimensions
         parts_list = []
         total_price = 0
         total_weight = 0
         
         for component in components:
-            # Simple algorithm: calculate quantity based on area and volume
             # For outdoor, use 20% more materials (weather protection factor)
             multiplier = 1.2 if request.location_type == "outdoor" else 1.0
             
-            # Example calculation (this will be replaced with actual equations)
-            if "deck" in component['name'].lower() or "platform" in component['name'].lower():
-                quantity_used = max(1, int((area / 4) * multiplier))
-            elif "support" in component['name'].lower() or "leg" in component['name'].lower():
-                quantity_used = max(4, int((request.height / 0.5) * 4 * multiplier))
-            elif "frame" in component['name'].lower() or "beam" in component['name'].lower():
-                perimeter = 2 * (request.width + request.depth)
-                quantity_used = max(1, int((perimeter / 2) * multiplier))
-            else:
-                # Generic calculation based on volume
-                quantity_used = max(1, int((volume / 10) * multiplier))
+            # Calculate quantity based on component type and actual dimensions
+            component_area = component['width'] * component['depth']
             
-            # Ensure we don't use more than available
+            if "deck" in component['name'].lower() or "platform" in component['name'].lower() or "panel" in component['name'].lower():
+                # Calculate how many deck panels needed to cover stage area
+                if component_area > 0:
+                    panels_needed = stage_area / component_area
+                    quantity_used = max(1, int(panels_needed * multiplier))
+                else:
+                    quantity_used = max(1, int((stage_area / 4) * multiplier))
+                    
+            elif "support" in component['name'].lower() or "leg" in component['name'].lower():
+                # Calculate support legs based on stage area and height
+                # Rule: 1 support per 4m² of stage area, minimum 4 corners
+                supports_by_area = max(4, int((stage_area / 4) * multiplier))
+                # Adjust for height (taller stages need more support)
+                height_factor = max(1.0, request.height / 1.5)
+                quantity_used = int(supports_by_area * height_factor)
+                
+            elif "frame" in component['name'].lower() or "beam" in component['name'].lower():
+                # Calculate frame pieces based on perimeter and component length
+                perimeter = 2 * (request.width + request.depth)
+                beam_length = max(component['width'], component['depth'])
+                if beam_length > 0:
+                    quantity_used = max(1, int((perimeter / beam_length) * multiplier))
+                else:
+                    quantity_used = max(1, int((perimeter / 2) * multiplier))
+                    
+            elif "connector" in component['name'].lower() or "bracket" in component['name'].lower():
+                # Connectors needed at joints - estimate based on perimeter sections
+                perimeter = 2 * (request.width + request.depth)
+                sections = int(perimeter / 2)  # Every 2m needs connectors
+                quantity_used = max(4, int(sections * 2 * multiplier))  # 2 connectors per section
+                
+            else:
+                # Generic calculation for other components
+                if component_area > 0:
+                    quantity_used = max(1, int((stage_area / component_area) * multiplier))
+                else:
+                    quantity_used = max(1, int((stage_volume / 10) * multiplier))
+            
+            # Ensure we don't use more than available in inventory
             quantity_used = min(quantity_used, component['quantity'])
             
             if quantity_used > 0:
