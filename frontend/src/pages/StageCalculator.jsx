@@ -76,13 +76,13 @@ const StageCalculator = () => {
     // Define the 8 vertices of the stage box
     const vertices = [
       [0, 0, 0],
-      [width, 0, 0],
-      [width, depth, 0],
-      [0, depth, 0],
-      [0, 0, height],
-      [width, 0, height],
-      [width, depth, height],
-      [0, depth, height]
+      [widthM, 0, 0],
+      [widthM, depthM, 0],
+      [0, depthM, 0],
+      [0, 0, heightM],
+      [widthM, 0, heightM],
+      [widthM, depthM, heightM],
+      [0, depthM, heightM]
     ];
 
     const isoVertices = vertices.map(v => toIso(v[0], v[1], v[2]));
