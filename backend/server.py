@@ -353,6 +353,8 @@ async def calculate_stage(request: CalculationRequest):
             depth=actual_depth if actual_depth > 0 else request.depth,
             height=request.height,
             location_type=request.location_type,
+            requested_width=request.width,
+            requested_depth=request.depth,
             parts_list=parts_list,
             total_price=round(total_price, 2),
             total_weight=round(total_weight, 2)
