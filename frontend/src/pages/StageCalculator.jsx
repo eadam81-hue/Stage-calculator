@@ -423,16 +423,16 @@ const StageCalculator = () => {
                       <TableRow key={index} data-testid={`part-row-${index}`}>
                         <TableCell className="font-medium">{part.name}</TableCell>
                         <TableCell className="text-right">{part.quantity_used}</TableCell>
-                        <TableCell className="text-right">${part.unit_price.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">£{part.unit_price.toFixed(2)}</TableCell>
                         <TableCell className="text-right">{part.unit_weight.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">${part.total_price.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">£{part.total_price.toFixed(2)}</TableCell>
                         <TableCell className="text-right">{part.total_weight.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="font-bold bg-slate-50">
                       <TableCell colSpan={4}>TOTALS</TableCell>
                       <TableCell className="text-right" data-testid="total-price">
-                        ${result.total_price.toFixed(2)}
+                        £{result.total_price.toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right" data-testid="total-weight">
                         {result.total_weight.toFixed(2)} kg
