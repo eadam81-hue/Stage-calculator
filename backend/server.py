@@ -41,6 +41,7 @@ class Component(BaseModel):
     
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
+    sku: Optional[str] = None
     quantity: int
     price: float
     weight: float
@@ -48,6 +49,7 @@ class Component(BaseModel):
 
 class ComponentCreate(BaseModel):
     name: str
+    sku: Optional[str] = None
     quantity: int
     price: float
     weight: float
