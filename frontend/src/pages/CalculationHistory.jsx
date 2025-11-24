@@ -112,7 +112,7 @@ const CalculationHistory = () => {
                         </div>
                         <div className="p-3 bg-slate-50 rounded-lg">
                           <p className="text-sm text-slate-500">Total Price</p>
-                          <p className="text-lg font-semibold">${calc.total_price.toFixed(2)}</p>
+                          <p className="text-lg font-semibold">£{calc.total_price.toFixed(2)}</p>
                         </div>
                         <div className="p-3 bg-slate-50 rounded-lg">
                           <p className="text-sm text-slate-500">Total Weight</p>
