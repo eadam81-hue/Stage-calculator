@@ -151,17 +151,17 @@ const StageCalculator = () => {
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
     ctx.lineWidth = 1;
     const gridSize = 1;
-    for (let i = 1; i < width; i += gridSize) {
-      const start = toIso(i, 0, height);
-      const end = toIso(i, depth, height);
+    for (let i = 1; i < widthM; i += gridSize) {
+      const start = toIso(i, 0, heightM);
+      const end = toIso(i, depthM, heightM);
       ctx.beginPath();
       ctx.moveTo(start[0], start[1]);
       ctx.lineTo(end[0], end[1]);
       ctx.stroke();
     }
-    for (let i = 1; i < depth; i += gridSize) {
-      const start = toIso(0, i, height);
-      const end = toIso(width, i, height);
+    for (let i = 1; i < depthM; i += gridSize) {
+      const start = toIso(0, i, heightM);
+      const end = toIso(widthM, i, heightM);
       ctx.beginPath();
       ctx.moveTo(start[0], start[1]);
       ctx.lineTo(end[0], end[1]);
@@ -170,8 +170,8 @@ const StageCalculator = () => {
   };
 
   useEffect(() => {
-    drawStage(dimensions.width, dimensions.depth, dimensions.height);
-  }, [dimensions]);
+    drawStage(dimensions.width, dimensions.depth, dimensions.height, unitLabel);
+  }, [dimensions, isMetric]);
 
   const handleCalculate = async () => {
     if (dimensions.width <= 0 || dimensions.depth <= 0 || dimensions.height <= 0) {
