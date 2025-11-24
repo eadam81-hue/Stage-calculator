@@ -273,7 +273,7 @@ async def calculate_stage(request: CalculationRequest):
                 remaining_width = target_width - width_covered
                 remaining_depth = target_depth - depth_covered
                 
-                # Check if we need to fill a gap
+                # Check if we have a significant gap (more than 10cm)
                 if remaining_width > 0.1 or remaining_depth > 0.1:
                     # Try to use smaller panels to fill the gap
                     for secondary_deck in deck_components[1:]:
@@ -281,33 +281,47 @@ async def calculate_stage(request: CalculationRequest):
                         sec_depth = secondary_deck['depth']
                         
                         # Try to fill the depth gap (most common scenario)
+                        # Check if panel width matches primary AND it helps cover the depth gap
                         if remaining_depth > 0.1 and abs(sec_width - primary_width) < 0.1:
-                            # Same width as primary, different depth - perfect for filling depth gap
-                            if sec_depth <= remaining_depth + 0.1:
-                                # Calculate how many we need across the width
-                                sec_panels_needed = panels_across
+                            # Panel has same width - can add a row
+                            # Even if it overshoots, it gets us closer to target
+                            if sec_depth > 0:
+                                # Would adding this row get us closer to the target?
+                                new_depth = depth_covered + sec_depth
+                                current_diff = abs(target_depth - depth_covered)
+                                new_diff = abs(target_depth - new_depth)
                                 
-                                if sec_panels_needed <= secondary_deck['quantity']:
-                                    used_components.append({
-                                        'component': secondary_deck,
-                                        'quantity': sec_panels_needed
-                                    })
-                                    actual_depth += sec_depth
-                                    break
+                                # Only add if it improves the fit or gets very close
+                                if new_diff < current_diff or abs(new_depth - target_depth) < 0.2:
+                                    # Calculate how many we need across the width
+                                    sec_panels_needed = panels_across
+                                    
+                                    if sec_panels_needed <= secondary_deck['quantity']:
+                                        used_components.append({
+                                            'component': secondary_deck,
+                                            'quantity': sec_panels_needed
+                                        })
+                                        actual_depth = new_depth
+                                        break
                         
                         # Try to fill the width gap
                         elif remaining_width > 0.1 and abs(sec_depth - primary_depth) < 0.1:
-                            # Same depth as primary, different width
-                            if sec_width <= remaining_width + 0.1:
-                                sec_panels_needed = panels_deep
+                            # Panel has same depth - can add a column
+                            if sec_width > 0:
+                                new_width = width_covered + sec_width
+                                current_diff = abs(target_width - width_covered)
+                                new_diff = abs(target_width - new_width)
                                 
-                                if sec_panels_needed <= secondary_deck['quantity']:
-                                    used_components.append({
-                                        'component': secondary_deck,
-                                        'quantity': sec_panels_needed
-                                    })
-                                    actual_width += sec_width
-                                    break
+                                if new_diff < current_diff or abs(new_width - target_width) < 0.2:
+                                    sec_panels_needed = panels_deep
+                                    
+                                    if sec_panels_needed <= secondary_deck['quantity']:
+                                        used_components.append({
+                                            'component': secondary_deck,
+                                            'quantity': sec_panels_needed
+                                        })
+                                        actual_width = new_width
+                                        break
         else:
             # Fallback: use at least 1 primary panel
             used_components.append({
