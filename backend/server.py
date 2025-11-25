@@ -335,6 +335,32 @@ async def calculate_stage(request: CalculationRequest):
             })
             actual_width = primary_deck['width']
             actual_depth = primary_deck['depth']
+            total_deck_panels = 1
+        
+        # Step 3: Add stage legs for INDOOR stages only
+        if request.location_type == "indoor":
+            # Find stage leg components
+            leg_components = [c for c in components if 'stage leg' in c['name'].lower()]
+            
+            if leg_components:
+                # Calculate legs needed based on stage area and panel count
+                stage_area = actual_width * actual_depth
+                
+                # Rule: Minimum 4 legs (corners), then 1 leg per 2m² of stage area
+                # OR 1 leg per deck panel (whichever is greater for safety)
+                legs_by_area = max(4, int(stage_area / 2))
+                legs_by_panels = max(4, total_deck_panels)
+                legs_needed = max(legs_by_area, legs_by_panels)
+                
+                # Use the first available stage leg type
+                stage_leg = leg_components[0]
+                legs_to_use = min(legs_needed, stage_leg['quantity'])
+                
+                if legs_to_use > 0:
+                    used_components.append({
+                        'component': stage_leg,
+                        'quantity': legs_to_use
+                    })
         
         # Build parts list
         parts_list = []
