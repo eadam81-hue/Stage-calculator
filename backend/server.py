@@ -268,6 +268,9 @@ async def calculate_stage(request: CalculationRequest):
             actual_width = width_covered
             actual_depth = depth_covered
             
+            # Track total deck panels for leg calculation
+            total_deck_panels = primary_qty
+            
             # Step 2: Fill remaining gaps with smaller panels (if available and needed)
             if len(deck_components) > 1:
                 remaining_width = target_width - width_covered
