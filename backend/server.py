@@ -343,24 +343,36 @@ async def calculate_stage(request: CalculationRequest):
             leg_components = [c for c in components if 'stage leg' in c['name'].lower()]
             
             if leg_components:
-                # Calculate legs needed based on stage area and panel count
-                stage_area = actual_width * actual_depth
+                # Calculate required leg length from requested stage height
+                # Finished deck height = leg length + 25mm
+                # So: leg length = requested height - 25mm
+                requested_height_mm = request.height * 1000  # Convert meters to mm
+                required_leg_length_mm = requested_height_mm - 25
+                required_leg_length_m = required_leg_length_mm / 1000  # Back to meters
                 
-                # Rule: Minimum 4 legs (corners), then 1 leg per 2m² of stage area
-                # OR 1 leg per deck panel (whichever is greater for safety)
-                legs_by_area = max(4, int(stage_area / 2))
-                legs_by_panels = max(4, total_deck_panels)
-                legs_needed = max(legs_by_area, legs_by_panels)
+                # Find the leg with closest matching length
+                # Leg length is stored as the larger dimension (width or depth)
+                best_leg = None
+                best_diff = float('inf')
                 
-                # Use the first available stage leg type
-                stage_leg = leg_components[0]
-                legs_to_use = min(legs_needed, stage_leg['quantity'])
+                for leg in leg_components:
+                    leg_length = max(leg['width'], leg['depth'])  # Leg length is the larger dimension
+                    diff = abs(leg_length - required_leg_length_m)
+                    
+                    if diff < best_diff:
+                        best_diff = diff
+                        best_leg = leg
                 
-                if legs_to_use > 0:
-                    used_components.append({
-                        'component': stage_leg,
-                        'quantity': legs_to_use
-                    })
+                if best_leg:
+                    # Calculate legs needed: 4 legs per deck panel
+                    legs_needed = total_deck_panels * 4
+                    legs_to_use = min(legs_needed, best_leg['quantity'])
+                    
+                    if legs_to_use > 0:
+                        used_components.append({
+                            'component': best_leg,
+                            'quantity': legs_to_use
+                        })
         
         # Build parts list
         parts_list = []
