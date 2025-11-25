@@ -324,6 +324,7 @@ async def calculate_stage(request: CalculationRequest):
                                             'quantity': sec_panels_needed
                                         })
                                         actual_width = new_width
+                                        total_deck_panels += sec_panels_needed
                                         break
         else:
             # Fallback: use at least 1 primary panel
