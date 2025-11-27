@@ -407,6 +407,23 @@ const StageCalculator = () => {
                   />
                 </div>
 
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                  <div>
+                    <Label htmlFor="valance-mode" className="text-base font-medium">
+                      Add Stage Valance
+                    </Label>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Covers widest side (for stages over 760mm)
+                    </p>
+                  </div>
+                  <Switch
+                    id="valance-mode"
+                    checked={addValance}
+                    onCheckedChange={setAddValance}
+                    data-testid="valance-switch"
+                  />
+                </div>
+
                 <Button
                   className="w-full bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600"
                   size="lg"
