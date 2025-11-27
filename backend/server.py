@@ -523,10 +523,12 @@ async def calculate_stage(request: CalculationRequest):
         calculation = Calculation(
             width=actual_width if actual_width > 0 else request.width,
             depth=actual_depth if actual_depth > 0 else request.depth,
-            height=request.height,
+            height=actual_stage_height,
             location_type=request.location_type,
             requested_width=request.width,
             requested_depth=request.depth,
+            requested_height=request.height,
+            height_adjusted_for_valance=height_adjusted_for_valance,
             parts_list=parts_list,
             total_price=round(total_price, 2),
             total_weight=round(total_weight, 2),
