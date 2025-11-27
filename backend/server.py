@@ -418,6 +418,44 @@ async def calculate_stage(request: CalculationRequest):
                         'quantity': legs_needed
                     })
         
+        # Step 4: Add stage valance if requested (for stages over 760mm height)
+        if request.add_valance and request.height > 0.76:
+            # Find valance/casement components (Black Cotton Casement for tall stages)
+            valance_components = [c for c in components if 'valance' in c['name'].lower() or 'casement' in c['name'].lower()]
+            
+            if valance_components:
+                # Find valance with closest matching height
+                required_valance_height_m = request.height
+                best_valance = None
+                best_height_diff = float('inf')
+                
+                for valance in valance_components:
+                    # Valance height is typically stored in depth dimension
+                    valance_height = valance['depth']
+                    height_diff = abs(valance_height - required_valance_height_m)
+                    
+                    if height_diff < best_height_diff:
+                        best_height_diff = height_diff
+                        best_valance = valance
+                
+                if best_valance:
+                    # Calculate widest side of the stage
+                    widest_dimension = max(actual_width, actual_depth)
+                    
+                    # Valance width (length of each panel)
+                    valance_panel_width = best_valance['width']
+                    
+                    # Calculate how many panels needed to cover the widest side
+                    # Always round UP to ensure full coverage (slightly more, not less)
+                    import math
+                    valance_panels_needed = math.ceil(widest_dimension / valance_panel_width)
+                    
+                    if valance_panels_needed > 0:
+                        used_components.append({
+                            'component': best_valance,
+                            'quantity': valance_panels_needed
+                        })
+        
         # Build parts list and check for inventory shortfalls
         parts_list = []
         total_price = 0
