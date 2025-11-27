@@ -413,25 +413,34 @@ async def calculate_stage(request: CalculationRequest):
                             'quantity': legs_to_use
                         })
         
-        # Build parts list
+        # Build parts list and check for inventory shortfalls
         parts_list = []
         total_price = 0
         total_weight = 0
+        has_inventory_issues = False
         
         for item in used_components:
             comp = item['component']
-            qty = item['quantity']
+            qty_needed = item['quantity']
+            qty_available = comp['quantity']
             
-            total_part_price = qty * comp['price']
-            total_part_weight = qty * comp['weight']
+            # Check if there's a shortfall
+            has_shortfall = qty_needed > qty_available
+            if has_shortfall:
+                has_inventory_issues = True
+            
+            total_part_price = qty_needed * comp['price']
+            total_part_weight = qty_needed * comp['weight']
             
             parts_list.append(CalculatedPart(
                 name=comp['name'],
-                quantity_used=qty,
+                quantity_used=qty_needed,
                 unit_price=comp['price'],
                 unit_weight=comp['weight'],
                 total_price=total_part_price,
-                total_weight=total_part_weight
+                total_weight=total_part_weight,
+                has_shortfall=has_shortfall,
+                available_quantity=qty_available
             ))
             
             total_price += total_part_price
