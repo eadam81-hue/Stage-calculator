@@ -288,7 +288,7 @@ async def calculate_stage(request: CalculationRequest):
             total_deck_panels = primary_qty
             
             # Step 2: Fill remaining gaps with smaller panels (if available and needed)
-            if len(deck_components) > 1:
+            if len(deck_components_prioritized) > 1:
                 remaining_width = target_width - width_covered
                 remaining_depth = target_depth - depth_covered
                 
