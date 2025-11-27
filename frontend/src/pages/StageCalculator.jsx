@@ -413,7 +413,7 @@ const StageCalculator = () => {
                       Add Stage Valance
                     </Label>
                     <p className="text-sm text-slate-500 mt-1">
-                      Covers widest side (for stages over 760mm)
+                      A black fabric stage skirt that covers the front edge of the platform
                     </p>
                   </div>
                   <Switch
