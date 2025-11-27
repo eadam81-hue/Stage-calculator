@@ -521,13 +521,39 @@ const StageCalculator = () => {
                   </TableHeader>
                   <TableBody>
                     {result.parts_list.map((part, index) => (
-                      <TableRow key={index} data-testid={`part-row-${index}`}>
-                        <TableCell className="font-medium">{part.name}</TableCell>
-                        <TableCell className="text-right">{part.quantity_used}</TableCell>
-                        <TableCell className="text-right">£{part.unit_price.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">{part.unit_weight.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">£{part.total_price.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">{part.total_weight.toFixed(2)}</TableCell>
+                      <TableRow 
+                        key={index} 
+                        data-testid={`part-row-${index}`}
+                        className={part.has_shortfall ? "bg-red-50 border-l-4 border-l-red-500" : ""}
+                      >
+                        <TableCell className={`font-medium ${part.has_shortfall ? "text-red-900" : ""}`}>
+                          {part.name}
+                          {part.has_shortfall && (
+                            <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                              Insufficient Stock
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className={`text-right ${part.has_shortfall ? "text-red-900 font-semibold" : ""}`}>
+                          {part.quantity_used}
+                          {part.has_shortfall && (
+                            <span className="block text-xs text-red-600 mt-1">
+                              (Available: {part.available_quantity})
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className={`text-right ${part.has_shortfall ? "text-red-900" : ""}`}>
+                          £{part.unit_price.toFixed(2)}
+                        </TableCell>
+                        <TableCell className={`text-right ${part.has_shortfall ? "text-red-900" : ""}`}>
+                          {part.unit_weight.toFixed(2)}
+                        </TableCell>
+                        <TableCell className={`text-right ${part.has_shortfall ? "text-red-900" : ""}`}>
+                          £{part.total_price.toFixed(2)}
+                        </TableCell>
+                        <TableCell className={`text-right ${part.has_shortfall ? "text-red-900" : ""}`}>
+                          {part.total_weight.toFixed(2)}
+                        </TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="font-bold bg-slate-50">
