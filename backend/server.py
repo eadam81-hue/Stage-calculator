@@ -417,11 +417,11 @@ async def calculate_stage(request: CalculationRequest):
             leg_components = [c for c in components if 'stage leg' in c['name'].lower()]
             
             if leg_components:
-                # Calculate required leg length from requested stage height
+                # Calculate required leg length from actual stage height (may be adjusted for valance)
                 # Finished deck height = leg length + 25mm
-                # So: leg length = requested height - 25mm
-                requested_height_mm = request.height * 1000  # Convert meters to mm
-                required_leg_length_mm = requested_height_mm - 25
+                # So: leg length = actual height - 25mm
+                actual_height_mm = actual_stage_height * 1000  # Convert meters to mm
+                required_leg_length_mm = actual_height_mm - 25
                 required_leg_length_m = required_leg_length_mm / 1000  # Back to meters
                 
                 # Find the leg with closest matching length
