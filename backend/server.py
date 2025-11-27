@@ -418,42 +418,116 @@ async def calculate_stage(request: CalculationRequest):
             actual_depth = primary_deck['depth']
             total_deck_panels = 1
         
-        # Step 3: Add stage legs for INDOOR stages only
-        if request.location_type == "indoor":
-            # Find stage leg components
-            leg_components = [c for c in components if 'stage leg' in c['name'].lower()]
+        # Step 3: Add stage legs (different logic for indoor vs outdoor)
+        # Find stage leg components
+        leg_components = [c for c in components if 'stage leg' in c['name'].lower()]
+        
+        if leg_components:
+            # Calculate required leg length from stage height
+            # Finished deck height = leg length + 25mm
+            # So: leg length = requested height - 25mm
+            requested_height_mm = actual_stage_height * 1000  # Convert meters to mm
+            required_leg_length_mm = requested_height_mm - 25
+            required_leg_length_m = required_leg_length_mm / 1000  # Back to meters
             
-            if leg_components:
-                # Calculate required leg length from actual stage height (may be adjusted for valance)
-                # Finished deck height = leg length + 25mm
-                # So: leg length = actual height - 25mm
-                actual_height_mm = actual_stage_height * 1000  # Convert meters to mm
-                required_leg_length_mm = actual_height_mm - 25
-                required_leg_length_m = required_leg_length_mm / 1000  # Back to meters
+            # Find the leg with closest matching length
+            best_leg = None
+            best_diff = float('inf')
+            
+            for leg in leg_components:
+                leg_length = max(leg['width'], leg['depth'])
+                diff = abs(leg_length - required_leg_length_m)
                 
-                # Find the leg with closest matching length
-                # Leg length is stored as the larger dimension (width or depth)
-                best_leg = None
-                best_diff = float('inf')
-                
-                for leg in leg_components:
-                    leg_length = max(leg['width'], leg['depth'])  # Leg length is the larger dimension
-                    diff = abs(leg_length - required_leg_length_m)
-                    
-                    if diff < best_diff:
-                        best_diff = diff
-                        best_leg = leg
-                
-                if best_leg:
-                    # Calculate legs needed: 4 legs per deck panel
+                if diff < best_diff:
+                    best_diff = diff
+                    best_leg = leg
+            
+            if best_leg:
+                if request.location_type == "indoor":
+                    # INDOOR: Simple calculation - 4 legs per deck panel
                     legs_needed = total_deck_panels * 4
                     
-                    # Add to list with the NEEDED quantity (not capped)
-                    # We'll check inventory when building parts list
                     used_components.append({
                         'component': best_leg,
                         'quantity': legs_needed
                     })
+                    
+                else:
+                    # OUTDOOR: Complex grid-based calculation
+                    # Calculate grid dimensions (panels across × panels deep)
+                    # This depends on how panels are laid out
+                    import math
+                    
+                    # Estimate panels in each direction based on actual dimensions
+                    primary_deck = deck_components_prioritized[0]
+                    panel_width = primary_deck['width']
+                    panel_depth = primary_deck['depth']
+                    
+                    panels_across = max(1, round(actual_width / panel_width))
+                    panels_deep = max(1, round(actual_depth / panel_depth))
+                    
+                    # Total legs for outdoor = (panels_across + 1) × (panels_deep + 1)
+                    # This creates a grid of leg positions
+                    legs_needed = (panels_across + 1) * (panels_deep + 1)
+                    
+                    used_components.append({
+                        'component': best_leg,
+                        'quantity': legs_needed
+                    })
+                    
+                    # Add leg savers for outdoor
+                    leg_saver_components = [c for c in components if 'leg saver' in c['name'].lower() or 'legsaver' in c['name'].lower()]
+                    
+                    if leg_saver_components:
+                        leg_saver = leg_saver_components[0]
+                        
+                        # Leg saver calculation based on the pattern
+                        # Back row: first deck (3 savers) + middle decks (2 each) + last deck (1)
+                        # Middle rows: first deck (2 savers) + middle decks (1 each) + last deck (0)
+                        # Front row: first deck (1 saver) + middle decks (1 each) + last deck (0)
+                        
+                        leg_savers_needed = 0
+                        
+                        # Back row
+                        leg_savers_needed += 3  # First deck
+                        leg_savers_needed += 2 * (panels_across - 2) if panels_across > 2 else 0  # Middle decks
+                        leg_savers_needed += 1  # Last deck
+                        
+                        # Middle rows
+                        for row in range(1, panels_deep - 1):
+                            leg_savers_needed += 2  # First deck
+                            leg_savers_needed += 1 * (panels_across - 1) if panels_across > 1 else 0  # Remaining decks
+                        
+                        # Front row (if more than 1 row)
+                        if panels_deep > 1:
+                            leg_savers_needed += 1  # First deck
+                            leg_savers_needed += 1 * (panels_across - 2) if panels_across > 2 else 0  # Middle decks
+                            # Last deck has 0 savers
+                        
+                        used_components.append({
+                            'component': leg_saver,
+                            'quantity': leg_savers_needed
+                        })
+                    
+                    # Add base jacks for outdoor (1 per leg)
+                    base_jack_components = [c for c in components if 'base jack' in c['name'].lower() or 'basejack' in c['name'].lower()]
+                    
+                    if base_jack_components:
+                        base_jack = base_jack_components[0]
+                        used_components.append({
+                            'component': base_jack,
+                            'quantity': legs_needed
+                        })
+                    
+                    # Add wooden pads for outdoor (1 per leg)
+                    wooden_pad_components = [c for c in components if 'wooden pad' in c['name'].lower() or 'wood pad' in c['name'].lower()]
+                    
+                    if wooden_pad_components:
+                        wooden_pad = wooden_pad_components[0]
+                        used_components.append({
+                            'component': wooden_pad,
+                            'quantity': legs_needed
+                        })
         
         # Step 4: Add stage valance if requested
         if request.add_valance:
