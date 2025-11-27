@@ -250,8 +250,12 @@ async def calculate_stage(request: CalculationRequest):
             # Use Aludeck first for exact metric dimensions
             deck_components_prioritized = aludeck_components + other_deck_components
         else:
-            # Use largest panels first (Litedeck priority)
-            deck_components_prioritized = deck_components
+            # Use largest panels first, EXCLUDING Aludeck (Litedeck priority)
+            # Only use Aludeck if no other options
+            if other_deck_components:
+                deck_components_prioritized = other_deck_components
+            else:
+                deck_components_prioritized = deck_components
         
         # Step 1: Use the PRIORITIZED panels as the base
         primary_deck = deck_components_prioritized[0]  # Aludeck if metric whole numbers, otherwise largest
