@@ -362,14 +362,14 @@ async def calculate_stage(request: CalculationRequest):
                                 if new_diff < current_diff or abs(new_width - target_width) < 0.2:
                                     sec_panels_needed = panels_deep
                                     
-                                    if sec_panels_needed <= secondary_deck['quantity']:
-                                        used_components.append({
-                                            'component': secondary_deck,
-                                            'quantity': sec_panels_needed
-                                        })
-                                        actual_width = new_width
-                                        total_deck_panels += sec_panels_needed
-                                        break
+                                    # Add what's needed (don't check inventory yet)
+                                    used_components.append({
+                                        'component': secondary_deck,
+                                        'quantity': sec_panels_needed
+                                    })
+                                    actual_width = new_width
+                                    total_deck_panels += sec_panels_needed
+                                    break
         else:
             # Fallback: use at least 1 primary panel
             used_components.append({
