@@ -396,7 +396,7 @@ const StageCalculator = () => {
                       Outdoor Installation
                     </Label>
                     <p className="text-sm text-slate-500 mt-1">
-                      Applies weather protection calculations
+                      Adds leg savers and base jacks for levelling the platform on uneven ground
                     </p>
                   </div>
                   <Switch
