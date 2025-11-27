@@ -215,7 +215,23 @@ async def calculate_stage(request: CalculationRequest):
         if not deck_components:
             raise HTTPException(status_code=400, detail="No deck/platform components found. Please upload deck components to build a stage.")
         
-        # STRATEGY: Use largest panels first, then fill gaps with smaller panels
+        # STRATEGY: Check if dimensions are whole numbers (metric)
+        # If yes, prioritize Aludeck 2x1m for exact fit
+        # Otherwise, use largest panels (Litedeck) first
+        
+        is_metric_whole_numbers = (target_width == int(target_width)) and (target_depth == int(target_depth))
+        
+        # Separate Aludeck and other deck types
+        aludeck_components = [c for c in deck_components if 'aludeck' in c['name'].lower()]
+        other_deck_components = [c for c in deck_components if 'aludeck' not in c['name'].lower()]
+        
+        # Prioritize based on dimensions
+        if is_metric_whole_numbers and aludeck_components:
+            # Use Aludeck first for exact metric dimensions
+            deck_components_prioritized = aludeck_components + other_deck_components
+        else:
+            # Use largest panels first (Litedeck priority)
+            deck_components_prioritized = deck_components
         
         # Step 1: Use the LARGEST panels as the base
         primary_deck = deck_components[0]  # Largest by area (e.g., 8x4)
