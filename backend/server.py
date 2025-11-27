@@ -233,11 +233,17 @@ async def calculate_stage(request: CalculationRequest):
             aludeck_width = aludeck['width']  # 2m
             aludeck_depth = aludeck['depth']  # 1m
             
-            # Can we achieve exact dimensions with Aludeck?
-            width_fits = (target_width % aludeck_width == 0) or (target_width % aludeck_depth == 0)
-            depth_fits = (target_depth % aludeck_width == 0) or (target_depth % aludeck_depth == 0)
+            # Try both orientations of Aludeck panels
+            # Normal: 2m wide × 1m deep
+            option1_width_fit = (target_width % aludeck_width == 0)
+            option1_depth_fit = (target_depth % aludeck_depth == 0)
             
-            can_use_aludeck_exactly = width_fits and depth_fits
+            # Rotated: 1m wide × 2m deep
+            option2_width_fit = (target_width % aludeck_depth == 0)
+            option2_depth_fit = (target_depth % aludeck_width == 0)
+            
+            # Aludeck can be used if either orientation fits exactly
+            can_use_aludeck_exactly = (option1_width_fit and option1_depth_fit) or (option2_width_fit and option2_depth_fit)
         
         # Prioritize based on dimensions
         if can_use_aludeck_exactly:
