@@ -279,8 +279,11 @@ async def calculate_stage(request: CalculationRequest):
         
         for pa, pd in test_configs:
             total = pa * pd
-            if total == 0 or total > primary_deck['quantity']:
+            if total == 0:
                 continue
+            
+            # Don't check inventory here - calculate what's NEEDED
+            # We'll detect shortfalls later when building parts list
             
             test_w = pa * primary_width
             test_d = pd * primary_depth
