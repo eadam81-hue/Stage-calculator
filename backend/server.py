@@ -215,7 +215,7 @@ async def calculate_stage(request: CalculationRequest):
         if not deck_components:
             raise HTTPException(status_code=400, detail="No deck/platform components found. Please upload deck components to build a stage.")
         
-        # STRATEGY: Check if dimensions are whole numbers (metric)
+        # STRATEGY: Check if dimensions are whole numbers (metric) AND divisible by Aludeck 2x1m
         # If yes, prioritize Aludeck 2x1m for exact fit
         # Otherwise, use largest panels (Litedeck) first
         
@@ -225,8 +225,22 @@ async def calculate_stage(request: CalculationRequest):
         aludeck_components = [c for c in deck_components if 'aludeck' in c['name'].lower()]
         other_deck_components = [c for c in deck_components if 'aludeck' not in c['name'].lower()]
         
-        # Prioritize based on dimensions
+        # Check if Aludeck can achieve exact dimensions
+        can_use_aludeck_exactly = False
         if is_metric_whole_numbers and aludeck_components:
+            # Check if dimensions are divisible by Aludeck panel size (2m × 1m)
+            aludeck = aludeck_components[0]
+            aludeck_width = aludeck['width']  # 2m
+            aludeck_depth = aludeck['depth']  # 1m
+            
+            # Can we achieve exact dimensions with Aludeck?
+            width_fits = (target_width % aludeck_width == 0) or (target_width % aludeck_depth == 0)
+            depth_fits = (target_depth % aludeck_width == 0) or (target_depth % aludeck_depth == 0)
+            
+            can_use_aludeck_exactly = width_fits and depth_fits
+        
+        # Prioritize based on dimensions
+        if can_use_aludeck_exactly:
             # Use Aludeck first for exact metric dimensions
             deck_components_prioritized = aludeck_components + other_deck_components
         else:
