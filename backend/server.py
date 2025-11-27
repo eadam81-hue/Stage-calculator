@@ -406,13 +406,13 @@ async def calculate_stage(request: CalculationRequest):
                 if best_leg:
                     # Calculate legs needed: 4 legs per deck panel
                     legs_needed = total_deck_panels * 4
-                    legs_to_use = min(legs_needed, best_leg['quantity'])
                     
-                    if legs_to_use > 0:
-                        used_components.append({
-                            'component': best_leg,
-                            'quantity': legs_to_use
-                        })
+                    # Add to list with the NEEDED quantity (not capped)
+                    # We'll check inventory when building parts list
+                    used_components.append({
+                        'component': best_leg,
+                        'quantity': legs_needed
+                    })
         
         # Build parts list and check for inventory shortfalls
         parts_list = []
