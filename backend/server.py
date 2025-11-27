@@ -249,16 +249,20 @@ async def calculate_stage(request: CalculationRequest):
         if can_use_aludeck_exactly:
             # Use Aludeck first for exact metric dimensions
             deck_components_prioritized = aludeck_components + other_deck_components
+            logger.info(f"Using Aludeck priority for {target_width}m × {target_depth}m")
         else:
             # Use largest panels first, EXCLUDING Aludeck (Litedeck priority)
             # Only use Aludeck if no other options
             if other_deck_components:
                 deck_components_prioritized = other_deck_components
+                logger.info(f"Excluding Aludeck, using {len(other_deck_components)} other deck types for {target_width}m × {target_depth}m")
             else:
                 deck_components_prioritized = deck_components
+                logger.info(f"No other deck options, using all {len(deck_components)} deck types")
         
         # Step 1: Use the PRIORITIZED panels as the base
         primary_deck = deck_components_prioritized[0]  # Aludeck if metric whole numbers, otherwise largest
+        logger.info(f"Primary deck selected: {primary_deck['name']}")
         primary_width = primary_deck['width']
         primary_depth = primary_deck['depth']
         
