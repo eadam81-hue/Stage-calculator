@@ -233,8 +233,8 @@ async def calculate_stage(request: CalculationRequest):
             # Use largest panels first (Litedeck priority)
             deck_components_prioritized = deck_components
         
-        # Step 1: Use the LARGEST panels as the base
-        primary_deck = deck_components[0]  # Largest by area (e.g., 8x4)
+        # Step 1: Use the PRIORITIZED panels as the base
+        primary_deck = deck_components_prioritized[0]  # Aludeck if metric whole numbers, otherwise largest
         primary_width = primary_deck['width']
         primary_depth = primary_deck['depth']
         
