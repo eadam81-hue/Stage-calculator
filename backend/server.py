@@ -295,7 +295,7 @@ async def calculate_stage(request: CalculationRequest):
                 # Check if we have a significant gap (more than 10cm)
                 if remaining_width > 0.1 or remaining_depth > 0.1:
                     # Try to use smaller panels to fill the gap
-                    for secondary_deck in deck_components[1:]:
+                    for secondary_deck in deck_components_prioritized[1:]:
                         sec_width = secondary_deck['width']
                         sec_depth = secondary_deck['depth']
                         
