@@ -71,6 +71,8 @@ class CalculatedPart(BaseModel):
     unit_weight: float
     total_price: float
     total_weight: float
+    has_shortfall: bool = False
+    available_quantity: int = 0
 
 class Calculation(BaseModel):
     model_config = ConfigDict(extra="ignore")
