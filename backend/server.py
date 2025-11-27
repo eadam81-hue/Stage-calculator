@@ -455,7 +455,7 @@ async def calculate_stage(request: CalculationRequest):
             
             if valance_components:
                 # Find valance with closest matching height
-                required_valance_height_m = request.height
+                required_valance_height_m = actual_stage_height
                 best_valance = None
                 best_height_diff = float('inf')
                 
