@@ -418,8 +418,8 @@ async def calculate_stage(request: CalculationRequest):
                         'quantity': legs_needed
                     })
         
-        # Step 4: Add stage valance if requested (for stages over 760mm height)
-        if request.add_valance and request.height > 0.76:
+        # Step 4: Add stage valance if requested
+        if request.add_valance:
             # Find valance/casement components (Black Cotton Casement for tall stages)
             valance_components = [c for c in components if 'valance' in c['name'].lower() or 'casement' in c['name'].lower()]
             
