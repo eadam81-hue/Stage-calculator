@@ -207,6 +207,34 @@ async def calculate_stage(request: CalculationRequest):
         # Sort components by area (largest first) for better fitting
         components_sorted = sorted(components, key=lambda x: x['width'] * x['depth'], reverse=True)
         
+        # Determine actual stage height (may be adjusted for valance)
+        actual_stage_height = request.height
+        height_adjusted_for_valance = False
+        
+        # If valance is requested and height < 760mm, adjust height to match available valance
+        if request.add_valance and request.height < 0.76:
+            # Find valance/casement components
+            valance_components = [c for c in components if 'valance' in c['name'].lower() or 'casement' in c['name'].lower()]
+            
+            if valance_components:
+                # Find valance with closest matching height to requested
+                best_valance_for_height = None
+                best_height_diff = float('inf')
+                
+                for valance in valance_components:
+                    valance_height = valance['depth']
+                    height_diff = abs(valance_height - request.height)
+                    
+                    if height_diff < best_height_diff:
+                        best_height_diff = height_diff
+                        best_valance_for_height = valance
+                
+                if best_valance_for_height:
+                    # Adjust stage height to match valance
+                    actual_stage_height = best_valance_for_height['depth']
+                    height_adjusted_for_valance = True
+                    logger.info(f"Height adjusted from {request.height}m to {actual_stage_height}m to match valance")
+        
         # ONLY calculate deck/platform components - ignore height, legs, frames, connectors
         target_width = request.width
         target_depth = request.depth
