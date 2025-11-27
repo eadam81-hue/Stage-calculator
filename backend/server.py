@@ -63,6 +63,7 @@ class CalculationRequest(BaseModel):
     depth: float
     height: float
     location_type: str  # "indoor" or "outdoor"
+    add_valance: bool = False  # Add stage valance
 
 class CalculatedPart(BaseModel):
     name: str
