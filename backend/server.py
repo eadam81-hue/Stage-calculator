@@ -87,6 +87,7 @@ class Calculation(BaseModel):
     parts_list: List[CalculatedPart]
     total_price: float
     total_weight: float
+    has_inventory_issues: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
