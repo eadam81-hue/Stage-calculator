@@ -272,17 +272,24 @@ async def calculate_stage(request: CalculationRequest):
             # Don't rely on rotation for primary deck selection
             can_use_aludeck_exactly = (target_width % aludeck_width == 0) and (target_depth % aludeck_depth == 0)
         
-        # Prioritize based on dimensions
-        if can_use_aludeck_exactly:
-            # Use Aludeck first for exact metric dimensions
-            deck_components_prioritized = aludeck_components + other_deck_components
-            logger.info(f"Using Aludeck priority for {target_width}m × {target_depth}m")
-        else:
-            # Use largest panels first, EXCLUDING Aludeck (Litedeck priority)
-            # Only use Aludeck if no other options
+        # Prioritize based on dimensions AND location type
+        # NEVER use Aludeck for outdoor installations
+        if request.location_type == "outdoor":
+            # Outdoor: ONLY use Litedeck (or other non-Aludeck decks)
             if other_deck_components:
                 deck_components_prioritized = other_deck_components
-                logger.info(f"Excluding Aludeck, using {len(other_deck_components)} other deck types for {target_width}m × {target_depth}m")
+                logger.info(f"Outdoor: Excluding Aludeck, using Litedeck for {target_width}m × {target_depth}m")
+            else:
+                raise HTTPException(status_code=400, detail="No suitable outdoor deck components found. Aludeck cannot be used for outdoor installations.")
+        elif can_use_aludeck_exactly:
+            # Indoor with exact metric dimensions: Use Aludeck first
+            deck_components_prioritized = aludeck_components + other_deck_components
+            logger.info(f"Indoor: Using Aludeck priority for {target_width}m × {target_depth}m")
+        else:
+            # Indoor with non-exact dimensions: Use largest panels first, excluding Aludeck
+            if other_deck_components:
+                deck_components_prioritized = other_deck_components
+                logger.info(f"Indoor: Excluding Aludeck, using {len(other_deck_components)} other deck types for {target_width}m × {target_depth}m")
             else:
                 deck_components_prioritized = deck_components
                 logger.info(f"No other deck options, using all {len(deck_components)} deck types")
