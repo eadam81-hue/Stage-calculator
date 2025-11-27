@@ -342,14 +342,14 @@ async def calculate_stage(request: CalculationRequest):
                                     # Calculate how many we need across the width
                                     sec_panels_needed = panels_across
                                     
-                                    if sec_panels_needed <= secondary_deck['quantity']:
-                                        used_components.append({
-                                            'component': secondary_deck,
-                                            'quantity': sec_panels_needed
-                                        })
-                                        actual_depth = new_depth
-                                        total_deck_panels += sec_panels_needed
-                                        break
+                                    # Add what's needed (don't check inventory yet)
+                                    used_components.append({
+                                        'component': secondary_deck,
+                                        'quantity': sec_panels_needed
+                                    })
+                                    actual_depth = new_depth
+                                    total_deck_panels += sec_panels_needed
+                                    break
                         
                         # Try to fill the width gap
                         elif remaining_width > 0.1 and abs(sec_depth - primary_depth) < 0.1:
