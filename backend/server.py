@@ -212,6 +212,7 @@ async def calculate_stage(request: CalculationRequest):
         height_adjusted_for_valance = False
         
         # If valance is requested and height < 760mm, adjust height to match available valance
+        # This applies to BOTH indoor and outdoor installations
         if request.add_valance and request.height < 0.76:
             # Find valance/casement components
             valance_components = [c for c in components if 'valance' in c['name'].lower() or 'casement' in c['name'].lower()]
@@ -230,7 +231,7 @@ async def calculate_stage(request: CalculationRequest):
                         best_valance_for_height = valance
                 
                 if best_valance_for_height:
-                    # Adjust stage height to match valance
+                    # Adjust stage height to match valance (for both indoor and outdoor)
                     actual_stage_height = best_valance_for_height['depth']
                     height_adjusted_for_valance = True
                     logger.info(f"Height adjusted from {request.height}m to {actual_stage_height}m to match valance")
