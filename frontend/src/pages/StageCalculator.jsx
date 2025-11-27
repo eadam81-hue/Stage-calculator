@@ -208,7 +208,8 @@ const StageCalculator = () => {
         width: widthInMeters,
         depth: depthInMeters,
         height: heightInMeters,
-        location_type: isOutdoor ? "outdoor" : "indoor"
+        location_type: isOutdoor ? "outdoor" : "indoor",
+        add_valance: addValance
       });
       
       setResult(response.data);
