@@ -457,7 +457,8 @@ async def calculate_stage(request: CalculationRequest):
             requested_depth=request.depth,
             parts_list=parts_list,
             total_price=round(total_price, 2),
-            total_weight=round(total_weight, 2)
+            total_weight=round(total_weight, 2),
+            has_inventory_issues=has_inventory_issues
         )
         
         # Save to database
