@@ -731,6 +731,7 @@ async def calculate_stage(request: CalculationRequest):
             requested_depth=request.depth,
             requested_height=request.height,
             height_adjusted_for_valance=height_adjusted_for_valance,
+            handrail_recommendation=handrail_recommendation,
             parts_list=parts_list,
             total_price=round(total_price, 2),
             total_weight=round(total_weight, 2),
