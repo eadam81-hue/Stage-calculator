@@ -571,6 +571,122 @@ async def calculate_stage(request: CalculationRequest):
                             'quantity': valance_panels_needed
                         })
         
+        # Step 5: Add steps if requested
+        steps_added_count = 0  # Track for handrail calculation
+        if request.add_steps:
+            import math
+            height_mm = actual_stage_height * 1000
+            
+            # Determine step type based on height
+            if height_mm < 300:
+                # No steps needed for stages below 300mm
+                pass
+            elif 300 <= height_mm < 600:
+                # Custom platform builds for low stages
+                if 300 <= height_mm < 450:  # ~1ft / 370mm
+                    # Add Litedeck 4×2 + 4× 165mm legs
+                    litedeck_4x2 = [c for c in components if 'litedeck 4x2' in c['name'].lower() or ('litedeck' in c['name'].lower() and '1.22' in str(c['width']) and '0.61' in str(c['depth']))]
+                    leg_165mm = [c for c in components if '165' in c['name'].lower() and 'leg' in c['name'].lower()]
+                    
+                    sets_needed = 2 if request.steps_quantity == "two" else 1
+                    
+                    if litedeck_4x2:
+                        used_components.append({'component': litedeck_4x2[0], 'quantity': sets_needed})
+                    if leg_165mm:
+                        used_components.append({'component': leg_165mm[0], 'quantity': 4 * sets_needed})
+                    steps_added_count = sets_needed
+                    
+                elif 450 <= height_mm < 600:  # ~1.5ft / 570mm
+                    # Add Litedeck 4×4 + Litedeck 4×2 + 8× 165mm legs per set
+                    litedeck_4x4 = [c for c in components if 'litedeck 4x4' in c['name'].lower() or ('litedeck' in c['name'].lower() and '1.22' in str(c['width']) and '1.22' in str(c['depth']))]
+                    litedeck_4x2 = [c for c in components if 'litedeck 4x2' in c['name'].lower() or ('litedeck' in c['name'].lower() and '1.22' in str(c['width']) and '0.61' in str(c['depth']))]
+                    leg_165mm = [c for c in components if '165' in c['name'].lower() and 'leg' in c['name'].lower()]
+                    
+                    sets_needed = 2 if request.steps_quantity == "two" else 1
+                    
+                    if litedeck_4x4:
+                        used_components.append({'component': litedeck_4x4[0], 'quantity': sets_needed})
+                    if litedeck_4x2:
+                        used_components.append({'component': litedeck_4x2[0], 'quantity': sets_needed})
+                    if leg_165mm:
+                        used_components.append({'component': leg_165mm[0], 'quantity': 8 * sets_needed})
+                    steps_added_count = sets_needed
+                    
+            elif 600 <= height_mm <= 1000:
+                # Adjustable Stage Treads: 600-1000mm
+                step_components = [c for c in components if 'adjustable' in c['name'].lower() and 'tread' in c['name'].lower() and '600' in c['name'].lower()]
+                if step_components:
+                    sets_needed = 2 if request.steps_quantity == "two" else 1
+                    used_components.append({'component': step_components[0], 'quantity': sets_needed})
+                    steps_added_count = sets_needed
+                    
+            elif 1000 < height_mm <= 1800:
+                # Adjustable Stage Treads: 1000-1800mm
+                step_components = [c for c in components if 'adjustable' in c['name'].lower() and 'tread' in c['name'].lower() and '1000' in c['name'].lower()]
+                if step_components:
+                    sets_needed = 2 if request.steps_quantity == "two" else 1
+                    used_components.append({'component': step_components[0], 'quantity': sets_needed})
+                    steps_added_count = sets_needed
+        
+        # Step 6: Add handrail if requested
+        handrail_recommendation = None
+        if request.add_handrail:
+            import math
+            
+            # Calculate perimeter (back + both sides, NOT front)
+            back_length = actual_width
+            side_length = actual_depth
+            total_perimeter = back_length + (2 * side_length)
+            
+            # Determine handrail type based on deck type
+            if 'aludeck' in deck_components_prioritized[0]['name'].lower():
+                # Metric decking - use 2m and 1m handrail
+                handrail_2m = [c for c in components if 'handrail' in c['name'].lower() and '2m' in c['name'].lower()]
+                handrail_1m = [c for c in components if 'handrail' in c['name'].lower() and '1m' in c['name'].lower()]
+                
+                if handrail_2m or handrail_1m:
+                    # Calculate optimal combination
+                    panels_2m = int(total_perimeter / 2.0)
+                    remaining = total_perimeter - (panels_2m * 2.0)
+                    panels_1m = math.ceil(remaining / 1.0)
+                    
+                    if handrail_2m and panels_2m > 0:
+                        used_components.append({'component': handrail_2m[0], 'quantity': panels_2m})
+                    if handrail_1m and panels_1m > 0:
+                        used_components.append({'component': handrail_1m[0], 'quantity': panels_1m})
+            else:
+                # Imperial decking - use 8ft and 4ft handrail
+                handrail_8ft = [c for c in components if 'handrail' in c['name'].lower() and '8ft' in c['name'].lower()]
+                handrail_4ft = [c for c in components if 'handrail' in c['name'].lower() and '4ft' in c['name'].lower()]
+                
+                if handrail_8ft or handrail_4ft:
+                    # Calculate optimal combination
+                    # Convert to feet for imperial handrail
+                    total_perimeter_ft = total_perimeter * 3.28084
+                    
+                    panels_8ft = int(total_perimeter_ft / 8.0)
+                    remaining_ft = total_perimeter_ft - (panels_8ft * 8.0)
+                    panels_4ft = math.ceil(remaining_ft / 4.0)
+                    
+                    # Adjust for steps: each step set replaces one 4ft section
+                    panels_4ft_adjusted = max(0, panels_4ft - steps_added_count)
+                    
+                    # If we removed more 4ft panels than we had, convert an 8ft to 4ft
+                    if panels_4ft_adjusted == 0 and steps_added_count > panels_4ft:
+                        deficit = steps_added_count - panels_4ft
+                        if deficit > 0 and panels_8ft > 0:
+                            panels_8ft -= deficit
+                            panels_4ft_adjusted += deficit
+                    
+                    if handrail_8ft and panels_8ft > 0:
+                        used_components.append({'component': handrail_8ft[0], 'quantity': panels_8ft})
+                    if handrail_4ft and panels_4ft_adjusted > 0:
+                        used_components.append({'component': handrail_4ft[0], 'quantity': panels_4ft_adjusted})
+        
+        # Check if handrail is recommended for safety (stages > 570mm)
+        if not request.add_handrail and actual_stage_height > 0.57:
+            handrail_recommendation = "For stages over 570mm, we recommend adding handrail to improve safety."
+        
         # Build parts list and check for inventory shortfalls
         parts_list = []
         total_price = 0
