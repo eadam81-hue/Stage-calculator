@@ -33,6 +33,9 @@ const StageCalculator = () => {
   const [isOutdoor, setIsOutdoor] = useState(false);
   const [isMetric, setIsMetric] = useState(true); // true = meters, false = feet
   const [addValance, setAddValance] = useState(false);
+  const [addSteps, setAddSteps] = useState(false);
+  const [stepsQuantity, setStepsQuantity] = useState("one"); // "one" or "two"
+  const [addHandrail, setAddHandrail] = useState(false);
   const [calculating, setCalculating] = useState(false);
   const [result, setResult] = useState(null);
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
