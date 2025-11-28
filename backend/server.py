@@ -64,6 +64,9 @@ class CalculationRequest(BaseModel):
     height: float
     location_type: str  # "indoor" or "outdoor"
     add_valance: bool = False  # Add stage valance
+    add_steps: bool = False  # Add steps
+    steps_quantity: str = "one"  # "one" or "two"
+    add_handrail: bool = False  # Add handrail
 
 class CalculatedPart(BaseModel):
     name: str
