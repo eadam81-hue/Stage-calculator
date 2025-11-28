@@ -383,12 +383,12 @@ const StageCalculator = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="height">Height ({unitLabel})</Label>
+                  <Label htmlFor="height">Height ({heightUnitLabel})</Label>
                   <Input
                     id="height"
                     type="number"
-                    step={isMetric ? "0.1" : "1"}
-                    min={isMetric ? "0.1" : "1"}
+                    step={isMetric ? "10" : "1"}
+                    min={isMetric ? "100" : "1"}
                     value={dimensions.height}
                     onChange={(e) => setDimensions({ ...dimensions, height: e.target.value })}
                     data-testid="height-input"
