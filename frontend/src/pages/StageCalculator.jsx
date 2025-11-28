@@ -206,7 +206,8 @@ const StageCalculator = () => {
       // Always send dimensions in meters to backend
       const widthInMeters = isMetric ? parseFloat(dimensions.width) : feetToMeters(parseFloat(dimensions.width));
       const depthInMeters = isMetric ? parseFloat(dimensions.depth) : feetToMeters(parseFloat(dimensions.depth));
-      const heightInMeters = isMetric ? parseFloat(dimensions.height) : feetToMeters(parseFloat(dimensions.height));
+      // Height: convert mm to meters for metric, or feet to meters for imperial
+      const heightInMeters = isMetric ? parseFloat(dimensions.height) / 1000 : feetToMeters(parseFloat(dimensions.height));
       
       const response = await axios.post(`${API}/calculate`, {
         width: widthInMeters,
