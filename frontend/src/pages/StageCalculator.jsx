@@ -528,14 +528,30 @@ const StageCalculator = () => {
                   className="w-full stage-canvas"
                   data-testid="stage-canvas"
                 />
-                <div className="mt-4 p-4 bg-slate-50 rounded-lg">
-                  <p className="text-sm text-slate-500 mb-2">Dimensions</p>
-                  <p className="text-base font-semibold text-slate-900">
-                    Width × Depth × Height
-                  </p>
-                  <p className="text-sm text-slate-700 mt-1">
-                    {dimensions.width}m ({(dimensions.width * 3.28084).toFixed(2)}ft) × {dimensions.depth}m ({(dimensions.depth * 3.28084).toFixed(2)}ft) × {isMetric ? dimensions.height + 'mm' : dimensions.height + 'ft'} ({isMetric ? (dimensions.height / 304.8).toFixed(2) + 'ft' : (dimensions.height * 304.8).toFixed(0) + 'mm'})
-                  </p>
+                <div className="mt-4 space-y-3">
+                  <div className="p-3 bg-slate-50 rounded-lg">
+                    <p className="text-sm text-slate-500 mb-1">Dimensions</p>
+                    <p className="text-base font-semibold text-slate-900">
+                      Width × Depth × Height
+                    </p>
+                    <p className="text-sm text-slate-700 mt-1">
+                      {dimensions.width}m ({(dimensions.width * 3.28084).toFixed(2)}ft) × {dimensions.depth}m ({(dimensions.depth * 3.28084).toFixed(2)}ft) × {isMetric ? dimensions.height + 'mm' : dimensions.height + 'ft'} ({isMetric ? (dimensions.height / 304.8).toFixed(2) + 'ft' : (dimensions.height * 304.8).toFixed(0) + 'mm'})
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-slate-50 rounded-lg">
+                      <p className="text-sm text-slate-500">Area</p>
+                      <p className="text-xl font-semibold text-slate-900">
+                        {(dimensions.width * dimensions.depth).toFixed(2)}{areaUnit}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-lg">
+                      <p className="text-sm text-slate-500">Build Location</p>
+                      <p className="text-xl font-semibold text-slate-900">
+                        {isOutdoor ? "Outdoor" : "Indoor"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
