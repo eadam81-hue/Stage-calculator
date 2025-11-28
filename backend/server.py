@@ -249,7 +249,14 @@ async def calculate_stage(request: CalculationRequest):
         actual_depth = 0
         
         # Find ONLY deck/platform/panel components, sorted by area (largest first)
-        deck_components = [c for c in components_sorted if 'deck' in c['name'].lower() or 'platform' in c['name'].lower() or 'panel' in c['name'].lower()]
+        # Exclude handrails, legs, valance, steps, and other accessories
+        deck_components = [c for c in components_sorted if 
+                          ('deck' in c['name'].lower() or 'platform' in c['name'].lower() or 'panel' in c['name'].lower()) 
+                          and 'handrail' not in c['name'].lower() 
+                          and 'valance' not in c['name'].lower()
+                          and 'casement' not in c['name'].lower()
+                          and 'step' not in c['name'].lower()
+                          and 'tread' not in c['name'].lower()]
         
         if not deck_components:
             raise HTTPException(status_code=400, detail="No deck/platform components found. Please upload deck components to build a stage.")
