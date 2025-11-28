@@ -431,6 +431,58 @@ const StageCalculator = () => {
                   />
                 </div>
 
+                <div className="p-4 bg-slate-50 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="steps-mode" className="text-base font-medium">
+                        Add Steps
+                      </Label>
+                      <p className="text-sm text-slate-500 mt-1">
+                        Access steps for the stage platform
+                      </p>
+                    </div>
+                    <Switch
+                      id="steps-mode"
+                      checked={addSteps}
+                      onCheckedChange={setAddSteps}
+                      data-testid="steps-switch"
+                    />
+                  </div>
+                  {addSteps && (
+                    <div className="space-y-2 pl-4 border-l-2 border-slate-300">
+                      <Label htmlFor="steps-quantity" className="text-sm font-medium">
+                        Number of Step Sets
+                      </Label>
+                      <Select value={stepsQuantity} onValueChange={setStepsQuantity}>
+                        <SelectTrigger id="steps-quantity" data-testid="steps-quantity-select">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="one">One Set</SelectItem>
+                          <SelectItem value="two">Two Sets (both sides)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                  <div>
+                    <Label htmlFor="handrail-mode" className="text-base font-medium">
+                      Add Handrail
+                    </Label>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Safety handrail around back and sides
+                    </p>
+                  </div>
+                  <Switch
+                    id="handrail-mode"
+                    checked={addHandrail}
+                    onCheckedChange={setAddHandrail}
+                    data-testid="handrail-switch"
+                  />
+                </div>
+
                 <Button
                   className="w-full bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600"
                   size="lg"
