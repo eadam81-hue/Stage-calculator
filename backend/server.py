@@ -661,28 +661,45 @@ async def calculate_stage(request: CalculationRequest):
                 handrail_4ft = [c for c in components if 'handrail' in c['name'].lower() and '4ft' in c['name'].lower()]
                 
                 if handrail_8ft or handrail_4ft:
-                    # Calculate optimal combination
+                    # Calculate optimal combination for each side separately
                     # Convert to feet for imperial handrail
-                    total_perimeter_ft = total_perimeter * 3.28084
+                    back_length_ft = back_length * 3.28084
+                    side_length_ft = side_length * 3.28084
                     
-                    panels_8ft = int(total_perimeter_ft / 8.0)
-                    remaining_ft = total_perimeter_ft - (panels_8ft * 8.0)
-                    panels_4ft = math.ceil(remaining_ft / 4.0)
+                    total_8ft = 0
+                    total_4ft = 0
+                    
+                    # Calculate for back
+                    back_8ft = int(back_length_ft / 8.0)
+                    back_remaining = back_length_ft - (back_8ft * 8.0)
+                    back_4ft = math.ceil(back_remaining / 4.0) if back_remaining > 0 else 0
+                    
+                    total_8ft += back_8ft
+                    total_4ft += back_4ft
+                    
+                    # Calculate for each side (2 sides)
+                    for _ in range(2):
+                        side_8ft = int(side_length_ft / 8.0)
+                        side_remaining = side_length_ft - (side_8ft * 8.0)
+                        side_4ft = math.ceil(side_remaining / 4.0) if side_remaining > 0 else 0
+                        
+                        total_8ft += side_8ft
+                        total_4ft += side_4ft
                     
                     # Adjust for steps: each step set replaces one 4ft section
-                    panels_4ft_adjusted = max(0, panels_4ft - steps_added_count)
+                    total_4ft_adjusted = max(0, total_4ft - steps_added_count)
                     
-                    # If we removed more 4ft panels than we had, convert an 8ft to 4ft
-                    if panels_4ft_adjusted == 0 and steps_added_count > panels_4ft:
-                        deficit = steps_added_count - panels_4ft
-                        if deficit > 0 and panels_8ft > 0:
-                            panels_8ft -= deficit
-                            panels_4ft_adjusted += deficit
+                    # If we removed more 4ft panels than we had, convert 8ft to 4ft
+                    if total_4ft_adjusted == 0 and steps_added_count > total_4ft:
+                        deficit = steps_added_count - total_4ft
+                        if deficit > 0 and total_8ft > 0:
+                            total_8ft -= deficit
+                            total_4ft_adjusted += deficit
                     
-                    if handrail_8ft and panels_8ft > 0:
-                        used_components.append({'component': handrail_8ft[0], 'quantity': panels_8ft})
-                    if handrail_4ft and panels_4ft_adjusted > 0:
-                        used_components.append({'component': handrail_4ft[0], 'quantity': panels_4ft_adjusted})
+                    if handrail_8ft and total_8ft > 0:
+                        used_components.append({'component': handrail_8ft[0], 'quantity': total_8ft})
+                    if handrail_4ft and total_4ft_adjusted > 0:
+                        used_components.append({'component': handrail_4ft[0], 'quantity': total_4ft_adjusted})
         
         # Check if handrail is recommended for safety (stages > 570mm)
         if not request.add_handrail and actual_stage_height > 0.57:
