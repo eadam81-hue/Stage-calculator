@@ -60,8 +60,8 @@ const StageCalculator = () => {
   
   // Get unit label
   const unitLabel = isMetric ? 'm' : 'ft';
+  const heightUnitLabel = isMetric ? 'mm' : 'ft';
   const areaUnit = isMetric ? 'm²' : 'ft²';
-  const volumeUnit = isMetric ? 'm³' : 'ft³';
 
   const drawStage = (width, depth, height, unit = 'm') => {
     const canvas = canvasRef.current;
