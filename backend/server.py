@@ -666,8 +666,6 @@ async def calculate_stage(request: CalculationRequest):
                     back_length_ft = back_length * 3.28084
                     side_length_ft = side_length * 3.28084
                     
-                    logger.info(f"Handrail calc: back={back_length_ft:.2f}ft, side={side_length_ft:.2f}ft")
-                    
                     total_8ft = 0
                     total_4ft = 0
                     
@@ -677,8 +675,6 @@ async def calculate_stage(request: CalculationRequest):
                     # Round to 1 decimal place to handle floating point precision
                     back_remaining = round(back_remaining, 1)
                     back_4ft = math.ceil(back_remaining / 4.0) if back_remaining > 0.1 else 0
-                    
-                    logger.info(f"Back: {back_8ft}x8ft + {back_4ft}x4ft (remaining: {back_remaining:.2f}ft)")
                     
                     total_8ft += back_8ft
                     total_4ft += back_4ft
@@ -691,12 +687,8 @@ async def calculate_stage(request: CalculationRequest):
                         side_remaining = round(side_remaining, 1)
                         side_4ft = math.ceil(side_remaining / 4.0) if side_remaining > 0.1 else 0
                         
-                        logger.info(f"Side {i+1}: {side_8ft}x8ft + {side_4ft}x4ft (remaining: {side_remaining:.2f}ft)")
-                        
                         total_8ft += side_8ft
                         total_4ft += side_4ft
-                    
-                    logger.info(f"Handrail total BEFORE steps adjustment: {total_8ft}x8ft + {total_4ft}x4ft")
                     
                     # Adjust for steps: each step set replaces one 4ft section
                     total_4ft_adjusted = max(0, total_4ft - steps_added_count)
