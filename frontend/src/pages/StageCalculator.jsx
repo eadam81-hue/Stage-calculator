@@ -77,7 +77,8 @@ const StageCalculator = () => {
     // Use meter values for calculations
     const widthM = width;
     const depthM = depth;
-    const heightM = height;
+    // Convert height: if metric, height is in mm, convert to meters for 3D visualization
+    const heightM = isMetric ? height / 1000 : height;
 
     // Calculate scaling factor
     const maxDim = Math.max(widthM, depthM, heightM);
