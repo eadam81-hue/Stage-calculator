@@ -353,7 +353,7 @@ class StepsHandrailTester:
             self.log_result("CRITICAL: Handrail-Steps interaction (2 sets)", False, f"API error: {status}")
     
     def test_handrail_steps_interaction_one_set(self):
-        """Test handrail with 1 set of steps - should remove 1x 4ft handrail"""
+        """Test handrail with 1 set of steps - should remove 1x 4ft handrail (may result in 0 4ft handrails)"""
         data = {
             "width": 7.3152,  # 24ft
             "depth": 3.6576,  # 12ft
@@ -370,13 +370,17 @@ class StepsHandrailTester:
             parts = response.get('parts_list', [])
             
             # Find handrail components
+            handrail_8ft = next((p for p in parts if 'handrail' in p['name'].lower() and '8ft' in p['name']), None)
             handrail_4ft = next((p for p in parts if 'handrail' in p['name'].lower() and '4ft' in p['name']), None)
             
-            if handrail_4ft:
-                # Should have reduced 4ft handrails by 1
-                self.log_result("Handrail-Steps interaction (1 set)", True, f"4ft handrails: {handrail_4ft['quantity_used']}")
+            # For 48ft perimeter with 1 step, should have 6x 8ft and 0x 4ft (step removes the 1x 4ft)
+            if handrail_8ft and handrail_8ft['quantity_used'] == 6:
+                if handrail_4ft is None or handrail_4ft['quantity_used'] == 0:
+                    self.log_result("Handrail-Steps interaction (1 set)", True, f"Correctly removed 4ft handrail: 6x 8ft, 0x 4ft")
+                else:
+                    self.log_result("Handrail-Steps interaction (1 set)", False, f"Expected 0x 4ft handrails, got {handrail_4ft['quantity_used']}")
             else:
-                self.log_result("Handrail-Steps interaction (1 set)", False, "Missing 4ft handrail component")
+                self.log_result("Handrail-Steps interaction (1 set)", False, f"Expected 6x 8ft handrails, got {handrail_8ft['quantity_used'] if handrail_8ft else 0}")
         else:
             self.log_result("Handrail-Steps interaction (1 set)", False, f"API error: {status}")
     
