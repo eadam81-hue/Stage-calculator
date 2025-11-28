@@ -674,7 +674,8 @@ async def calculate_stage(request: CalculationRequest):
                     # Calculate for back
                     back_8ft = int(back_length_ft / 8.0)
                     back_remaining = back_length_ft - (back_8ft * 8.0)
-                    # Ignore very small remainders (< 0.1ft / ~3cm) due to floating point precision
+                    # Round to 1 decimal place to handle floating point precision
+                    back_remaining = round(back_remaining, 1)
                     back_4ft = math.ceil(back_remaining / 4.0) if back_remaining > 0.1 else 0
                     
                     logger.info(f"Back: {back_8ft}x8ft + {back_4ft}x4ft (remaining: {back_remaining:.2f}ft)")
@@ -686,7 +687,8 @@ async def calculate_stage(request: CalculationRequest):
                     for i in range(2):
                         side_8ft = int(side_length_ft / 8.0)
                         side_remaining = side_length_ft - (side_8ft * 8.0)
-                        # Ignore very small remainders (< 0.1ft / ~3cm) due to floating point precision
+                        # Round to 1 decimal place to handle floating point precision
+                        side_remaining = round(side_remaining, 1)
                         side_4ft = math.ceil(side_remaining / 4.0) if side_remaining > 0.1 else 0
                         
                         logger.info(f"Side {i+1}: {side_8ft}x8ft + {side_4ft}x4ft (remaining: {side_remaining:.2f}ft)")
