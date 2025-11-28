@@ -90,6 +90,7 @@ class Calculation(BaseModel):
     requested_depth: Optional[float] = None  # Original requested depth
     requested_height: Optional[float] = None  # Original requested height
     height_adjusted_for_valance: bool = False
+    handrail_recommendation: Optional[str] = None
     parts_list: List[CalculatedPart]
     total_price: float
     total_weight: float
