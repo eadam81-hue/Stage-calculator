@@ -101,3 +101,149 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Build a stage calculator that calculates stage dimensions, parts list, and includes options for Steps and Handrail features"
+
+backend:
+  - task: "Steps Feature - Low Height (300-600mm)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented logic for stages 300-450mm (uses Litedeck 4x2 + 165mm legs) and 450-600mm (uses Litedeck 4x4 + 4x2 + 165mm legs). Lines 587-614 in server.py. User uploaded required components. Ready for testing."
+
+  - task: "Steps Feature - Adjustable Treads (600-1800mm)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented logic for 600-1000mm (Adjustable Stage Treads 600-1000mm) and 1000-1800mm (Adjustable Stage Treads 1000-1800mm). Lines 616-630 in server.py. Components are uploaded and available."
+
+  - task: "Steps Quantity Selection (One or Two Sets)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented steps_quantity parameter that accepts 'one' or 'two'. This multiplies the component quantities accordingly. Integrated throughout steps logic."
+
+  - task: "Handrail Feature - Imperial (8ft and 4ft)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented handrail calculation for imperial (Litedeck) stages. Calculates perimeter (back + 2 sides) and distributes 8ft and 4ft handrails optimally. Lines 659-685 in server.py. Components uploaded."
+
+  - task: "Handrail Feature - Metric (2m and 1m)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented handrail calculation for metric (Aludeck) stages using 2m and 1m handrails. Lines 643-657 in server.py."
+
+  - task: "Handrail-Steps Interaction"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented logic where adding steps removes corresponding handrail sections. Each step set replaces one 4ft handrail section. Lines 673-680 in server.py. CRITICAL: Must verify with user's example (24ft x 12ft stage with 2 sets of steps)."
+
+  - task: "Handrail Safety Recommendation"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added handrail_recommendation field that displays warning for stages > 570mm when handrail is not selected. Lines 688-689 in server.py."
+
+frontend:
+  - task: "Steps UI Toggle and Quantity Selector"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/StageCalculator.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added toggle for Steps and dropdown for quantity (One or Two sets). Integrated into API request payload."
+
+  - task: "Handrail UI Toggle"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/StageCalculator.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added toggle for Handrail. Integrated into API request payload."
+
+  - task: "Handrail Recommendation Display"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/StageCalculator.jsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Frontend should display handrail_recommendation message when returned from API."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Steps Feature - Low Height (300-600mm)"
+    - "Steps Feature - Adjustable Treads (600-1800mm)"
+    - "Steps Quantity Selection (One or Two Sets)"
+    - "Handrail Feature - Imperial (8ft and 4ft)"
+    - "Handrail-Steps Interaction"
+    - "Handrail Safety Recommendation"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "User has uploaded all required components (Adjustable Stage Treads, Litedeck 4x2, Litedeck 4x4, 165mm legs, 8ft/4ft/2ft handrails, 2m/1m handrails). Backend service restarted. All Steps and Handrail features are implemented but UNTESTED. Please create comprehensive test file at /app/backend/tests/test_steps_handrail.py and test all scenarios. CRITICAL: Verify user's example - 24ft x 12ft stage should get 5x 8ft handrails + 2x 4ft handrails. With 2 sets of steps, should remove 2x 4ft handrails."
