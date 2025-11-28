@@ -272,10 +272,15 @@ async def calculate_stage(request: CalculationRequest):
             aludeck_width = aludeck['width']  # 2m
             aludeck_depth = aludeck['depth']  # 1m
             
+            logger.info(f"Aludeck check: width={target_width}, depth={target_depth}, is_whole={is_metric_whole_numbers}, aludeck={aludeck_width}x{aludeck_depth}")
+            logger.info(f"Modulo check: {target_width} % {aludeck_width} = {target_width % aludeck_width}, {target_depth} % {aludeck_depth} = {target_depth % aludeck_depth}")
+            
             # Check if we can achieve exact dimensions with Aludeck panels
             # ONLY check normal orientation (2m wide × 1m deep) for Aludeck priority
             # Don't rely on rotation for primary deck selection
             can_use_aludeck_exactly = (target_width % aludeck_width == 0) and (target_depth % aludeck_depth == 0)
+            
+            logger.info(f"can_use_aludeck_exactly: {can_use_aludeck_exactly}")
         
         # Prioritize based on dimensions AND location type
         # NEVER use Aludeck for outdoor installations
