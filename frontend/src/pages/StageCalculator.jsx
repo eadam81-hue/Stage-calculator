@@ -212,7 +212,10 @@ const StageCalculator = () => {
         depth: depthInMeters,
         height: heightInMeters,
         location_type: isOutdoor ? "outdoor" : "indoor",
-        add_valance: addValance
+        add_valance: addValance,
+        add_steps: addSteps,
+        steps_quantity: stepsQuantity,
+        add_handrail: addHandrail
       });
       
       setResult(response.data);
