@@ -156,7 +156,7 @@ const StageCalculator = () => {
     // Display values in user's chosen unit
     const displayWidth = isMetric ? width : metersToFeet(width).toFixed(1);
     const displayDepth = isMetric ? depth : metersToFeet(depth).toFixed(1);
-    const displayHeight = isMetric ? height : metersToFeet(height).toFixed(1);
+    const displayHeight = isMetric ? height + 'mm' : height + 'ft';
     
     // Width label
     const widthMid = [(isoVertices[4][0] + isoVertices[5][0]) / 2, isoVertices[4][1] - 20];
@@ -168,7 +168,7 @@ const StageCalculator = () => {
     
     // Height label
     const heightMid = [isoVertices[5][0] + 30, (isoVertices[5][1] + isoVertices[1][1]) / 2];
-    ctx.fillText(`${displayHeight}${unit}`, heightMid[0], heightMid[1]);
+    ctx.fillText(`${displayHeight}`, heightMid[0], heightMid[1]);
 
     // Add grid on top face
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
