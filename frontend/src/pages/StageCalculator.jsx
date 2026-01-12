@@ -518,7 +518,7 @@ const StageCalculator = () => {
                   3D Stage Visualization
                 </CardTitle>
                 <CardDescription>
-                  Isometric view of your stage design
+                  Interactive 3D view - drag to rotate, scroll to zoom
                 </CardDescription>
               </CardHeader>
               <CardContent>
