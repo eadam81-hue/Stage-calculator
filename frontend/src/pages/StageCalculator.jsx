@@ -522,12 +522,26 @@ const StageCalculator = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <canvas
-                  ref={canvasRef}
-                  width={600}
-                  height={400}
-                  className="w-full stage-canvas"
-                  data-testid="stage-canvas"
+                <Stage3D
+                  width={dimensions.width}
+                  height={isMetric ? dimensions.height / 1000 : dimensions.height * 0.3048}
+                  depth={dimensions.depth}
+                  deckType={result ? (result.parts_list.some(p => p.name.toLowerCase().includes('aludeck')) ? 'aludeck' : 'litedeck') : 'litedeck'}
+                  deckConfig={result ? {
+                    width: result.parts_list.find(p => p.name.toLowerCase().includes('deck') && !p.name.toLowerCase().includes('handrail'))?.unit_width || 2.44,
+                    depth: result.parts_list.find(p => p.name.toLowerCase().includes('deck') && !p.name.toLowerCase().includes('handrail'))?.unit_depth || 1.22,
+                    panelsWide: Math.round(result.width / (result.parts_list.find(p => p.name.toLowerCase().includes('deck') && !p.name.toLowerCase().includes('handrail'))?.unit_width || 2.44)),
+                    panelsDeep: Math.round(result.depth / (result.parts_list.find(p => p.name.toLowerCase().includes('deck') && !p.name.toLowerCase().includes('handrail'))?.unit_depth || 1.22))
+                  } : {
+                    width: 2.44,
+                    depth: 1.22,
+                    panelsWide: Math.round(dimensions.width / 2.44),
+                    panelsDeep: Math.round(dimensions.depth / 1.22)
+                  }}
+                  isOutdoor={isOutdoor}
+                  showHandrail={addHandrail}
+                  showSteps={addSteps}
+                  showValance={addValance}
                 />
                 <div className="mt-4 space-y-3">
                   <div className="p-3 bg-slate-50 rounded-lg">
