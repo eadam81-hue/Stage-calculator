@@ -73,58 +73,61 @@ const StageCalculator = () => {
     const canvasH = canvas.height;
     ctx.clearRect(0, 0, canvasW, canvasH);
 
-    // Convert height to meters for visualization if in mm
+    // Convert height to meters for visualization
     const heightM = isMetric ? height / 1000 : height * 0.3048;
     const widthM = width;
     const depthM = depth;
 
-    // Calculate bounding box in isometric projection
-    // Isometric projection: x' = (x - y), y' = (x + y)/2 - z
-    const isoWidth = widthM + depthM;
-    const isoHeight = (widthM + depthM) / 2 + heightM;
+    // Find the maximum dimension to scale appropriately
+    const maxDim = Math.max(widthM, depthM, heightM);
     
-    // Calculate scale to fit in canvas with padding
-    const padding = 60;
-    const scaleX = (canvasW - padding * 2) / isoWidth;
-    const scaleY = (canvasH - padding * 2) / isoHeight;
-    const scale = Math.min(scaleX, scaleY);
+    // Calculate scale - use a factor that leaves room for labels and padding
+    const availableSpace = Math.min(canvasW * 0.7, canvasH * 0.7);
+    const scale = availableSpace / maxDim;
 
-    // Calculate center position
+    // Center point
     const centerX = canvasW / 2;
-    const centerY = canvasH / 2 + heightM * scale / 2;
+    const centerY = canvasH / 2;
 
-    // Isometric projection helper
+    // Standard isometric projection angles
+    // For isometric: x goes right-down, y goes left-down, z goes up
+    const isoAngle = Math.PI / 6; // 30 degrees
+    const cos30 = Math.cos(isoAngle);
+    const sin30 = Math.sin(isoAngle);
+
+    // Isometric projection function
     const toIso = (x, y, z) => {
-      const isoX = centerX + (x - y) * scale;
-      const isoY = centerY - ((x + y) / 2 - z) * scale;
-      return [isoX, isoY];
+      // Standard isometric: 
+      // screenX = (x - y) * cos(30°)
+      // screenY = (x + y) * sin(30°) - z
+      const screenX = (x - y) * cos30 * scale;
+      const screenY = ((x + y) * sin30 - z) * scale;
+      return [centerX + screenX, centerY + screenY];
     };
 
-    // Draw stage box vertices
-    const vertices = [
-      [0, 0, 0],           // 0: bottom back-left
-      [widthM, 0, 0],      // 1: bottom back-right
-      [widthM, depthM, 0], // 2: bottom front-right
-      [0, depthM, 0],      // 3: bottom front-left
-      [0, 0, heightM],     // 4: top back-left
-      [widthM, 0, heightM],// 5: top back-right
-      [widthM, depthM, heightM], // 6: top front-right
-      [0, depthM, heightM] // 7: top front-left
+    // Define the 8 vertices of the box
+    const verts = [
+      toIso(0, 0, 0),           // 0: bottom-back-left
+      toIso(widthM, 0, 0),      // 1: bottom-back-right
+      toIso(widthM, depthM, 0), // 2: bottom-front-right
+      toIso(0, depthM, 0),      // 3: bottom-front-left
+      toIso(0, 0, heightM),     // 4: top-back-left
+      toIso(widthM, 0, heightM),// 5: top-back-right
+      toIso(widthM, depthM, heightM), // 6: top-front-right
+      toIso(0, depthM, heightM) // 7: top-front-left
     ];
 
-    const isoVertices = vertices.map(v => toIso(v[0], v[1], v[2]));
-
-    // Draw faces with proper colors
+    // Draw the three visible faces
     ctx.lineWidth = 2;
 
     // Top face (lightest)
     ctx.fillStyle = '#22d3ee';
     ctx.strokeStyle = '#06b6d4';
     ctx.beginPath();
-    ctx.moveTo(isoVertices[4][0], isoVertices[4][1]);
-    ctx.lineTo(isoVertices[5][0], isoVertices[5][1]);
-    ctx.lineTo(isoVertices[6][0], isoVertices[6][1]);
-    ctx.lineTo(isoVertices[7][0], isoVertices[7][1]);
+    ctx.moveTo(verts[4][0], verts[4][1]);
+    ctx.lineTo(verts[5][0], verts[5][1]);
+    ctx.lineTo(verts[6][0], verts[6][1]);
+    ctx.lineTo(verts[7][0], verts[7][1]);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -133,10 +136,10 @@ const StageCalculator = () => {
     ctx.fillStyle = '#0891b2';
     ctx.strokeStyle = '#0e7490';
     ctx.beginPath();
-    ctx.moveTo(isoVertices[1][0], isoVertices[1][1]);
-    ctx.lineTo(isoVertices[5][0], isoVertices[5][1]);
-    ctx.lineTo(isoVertices[6][0], isoVertices[6][1]);
-    ctx.lineTo(isoVertices[2][0], isoVertices[2][1]);
+    ctx.moveTo(verts[1][0], verts[1][1]);
+    ctx.lineTo(verts[2][0], verts[2][1]);
+    ctx.lineTo(verts[6][0], verts[6][1]);
+    ctx.lineTo(verts[5][0], verts[5][1]);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -145,10 +148,10 @@ const StageCalculator = () => {
     ctx.fillStyle = '#0e7490';
     ctx.strokeStyle = '#155e75';
     ctx.beginPath();
-    ctx.moveTo(isoVertices[0][0], isoVertices[0][1]);
-    ctx.lineTo(isoVertices[4][0], isoVertices[4][1]);
-    ctx.lineTo(isoVertices[7][0], isoVertices[7][1]);
-    ctx.lineTo(isoVertices[3][0], isoVertices[3][1]);
+    ctx.moveTo(verts[3][0], verts[3][1]);
+    ctx.lineTo(verts[7][0], verts[7][1]);
+    ctx.lineTo(verts[4][0], verts[4][1]);
+    ctx.lineTo(verts[0][0], verts[0][1]);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -157,23 +160,27 @@ const StageCalculator = () => {
     ctx.fillStyle = '#1e293b';
     ctx.font = 'bold 14px sans-serif';
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
 
     const unit = isMetric ? 'm' : 'ft';
-    const displayWidth = isMetric ? width : (width * 3.28084).toFixed(1);
-    const displayDepth = isMetric ? depth : (depth * 3.28084).toFixed(1);
+    const displayWidth = isMetric ? width.toFixed(1) : (width * 3.28084).toFixed(1);
+    const displayDepth = isMetric ? depth.toFixed(1) : (depth * 3.28084).toFixed(1);
     const displayHeight = isMetric ? height + 'mm' : height + 'ft';
 
-    // Width label (top back edge)
-    const widthMid = [(isoVertices[4][0] + isoVertices[5][0]) / 2, isoVertices[4][1] - 15];
-    ctx.fillText(`${displayWidth}${unit}`, widthMid[0], widthMid[1]);
+    // Width label (back top edge)
+    const widthX = (verts[4][0] + verts[5][0]) / 2;
+    const widthY = (verts[4][1] + verts[5][1]) / 2 - 15;
+    ctx.fillText(`${displayWidth}${unit}`, widthX, widthY);
 
-    // Depth label (top right edge)
-    const depthMid = [(isoVertices[5][0] + isoVertices[6][0]) / 2, isoVertices[5][1] - 15];
-    ctx.fillText(`${displayDepth}${unit}`, depthMid[0], depthMid[1]);
+    // Depth label (right top edge)
+    const depthX = (verts[5][0] + verts[6][0]) / 2;
+    const depthY = (verts[5][1] + verts[6][1]) / 2 - 15;
+    ctx.fillText(`${displayDepth}${unit}`, depthX, depthY);
 
-    // Height label (right edge)
-    const heightMid = [isoVertices[6][0] + 40, (isoVertices[2][1] + isoVertices[6][1]) / 2];
-    ctx.fillText(displayHeight, heightMid[0], heightMid[1]);
+    // Height label (right vertical edge)
+    const heightX = (verts[2][0] + verts[6][0]) / 2 + 35;
+    const heightY = (verts[2][1] + verts[6][1]) / 2;
+    ctx.fillText(displayHeight, heightX, heightY);
   };
 
   // Draw stage when dimensions change
