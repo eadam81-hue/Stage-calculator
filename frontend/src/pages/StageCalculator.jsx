@@ -163,8 +163,8 @@ const StageCalculator = () => {
     ctx.textBaseline = 'middle';
 
     const unit = isMetric ? 'm' : 'ft';
-    const displayWidth = isMetric ? width.toFixed(1) : (width * 3.28084).toFixed(1);
-    const displayDepth = isMetric ? depth.toFixed(1) : (depth * 3.28084).toFixed(1);
+    const displayWidth = isMetric ? Number(width).toFixed(1) : (Number(width) * 3.28084).toFixed(1);
+    const displayDepth = isMetric ? Number(depth).toFixed(1) : (Number(depth) * 3.28084).toFixed(1);
     const displayHeight = isMetric ? height + 'mm' : height + 'ft';
 
     // Width label (back top edge)
