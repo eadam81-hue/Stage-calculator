@@ -19,7 +19,6 @@ import {
 import { toast } from "sonner";
 import { Loader2, Box, Ruler, Upload, History, ShoppingCart, Download, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Stage3D from "../components/Stage3D";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
