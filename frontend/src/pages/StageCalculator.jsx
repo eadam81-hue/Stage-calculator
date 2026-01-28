@@ -69,45 +69,57 @@ const StageCalculator = () => {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const canvasW = canvas.width;
+    const canvasH = canvas.height;
+    ctx.clearRect(0, 0, canvasW, canvasH);
 
     // Convert height to meters for visualization if in mm
     const heightM = isMetric ? height / 1000 : height * 0.3048;
     const widthM = width;
     const depthM = depth;
 
-    // Scale and center
-    const scale = Math.min(400 / Math.max(widthM, depthM, heightM), 50);
-    const centerX = 300;
-    const centerY = 200;
+    // Calculate bounding box in isometric projection
+    // Isometric projection: x' = (x - y), y' = (x + y)/2 - z
+    const isoWidth = widthM + depthM;
+    const isoHeight = (widthM + depthM) / 2 + heightM;
+    
+    // Calculate scale to fit in canvas with padding
+    const padding = 60;
+    const scaleX = (canvasW - padding * 2) / isoWidth;
+    const scaleY = (canvasH - padding * 2) / isoHeight;
+    const scale = Math.min(scaleX, scaleY);
+
+    // Calculate center position
+    const centerX = canvasW / 2;
+    const centerY = canvasH / 2 + heightM * scale / 2;
 
     // Isometric projection helper
     const toIso = (x, y, z) => {
-      const isoX = centerX + (x - y) * scale * 0.866;
-      const isoY = centerY + (x + y) * scale * 0.5 - z * scale;
+      const isoX = centerX + (x - y) * scale;
+      const isoY = centerY - ((x + y) / 2 - z) * scale;
       return [isoX, isoY];
     };
 
-    // Draw stage box
+    // Draw stage box vertices
     const vertices = [
-      [0, 0, 0],
-      [widthM, 0, 0],
-      [widthM, depthM, 0],
-      [0, depthM, 0],
-      [0, 0, heightM],
-      [widthM, 0, heightM],
-      [widthM, depthM, heightM],
-      [0, depthM, heightM]
+      [0, 0, 0],           // 0: bottom back-left
+      [widthM, 0, 0],      // 1: bottom back-right
+      [widthM, depthM, 0], // 2: bottom front-right
+      [0, depthM, 0],      // 3: bottom front-left
+      [0, 0, heightM],     // 4: top back-left
+      [widthM, 0, heightM],// 5: top back-right
+      [widthM, depthM, heightM], // 6: top front-right
+      [0, depthM, heightM] // 7: top front-left
     ];
 
     const isoVertices = vertices.map(v => toIso(v[0], v[1], v[2]));
 
-    // Draw faces
-    ctx.fillStyle = '#0ea5e9';
-    ctx.strokeStyle = '#0284c7';
+    // Draw faces with proper colors
     ctx.lineWidth = 2;
 
-    // Top face
+    // Top face (lightest)
+    ctx.fillStyle = '#22d3ee';
+    ctx.strokeStyle = '#06b6d4';
     ctx.beginPath();
     ctx.moveTo(isoVertices[4][0], isoVertices[4][1]);
     ctx.lineTo(isoVertices[5][0], isoVertices[5][1]);
@@ -117,24 +129,26 @@ const StageCalculator = () => {
     ctx.fill();
     ctx.stroke();
 
-    // Front face
-    ctx.fillStyle = '#06b6d4';
+    // Right face (medium)
+    ctx.fillStyle = '#0891b2';
+    ctx.strokeStyle = '#0e7490';
     ctx.beginPath();
-    ctx.moveTo(isoVertices[5][0], isoVertices[5][1]);
+    ctx.moveTo(isoVertices[1][0], isoVertices[1][1]);
+    ctx.lineTo(isoVertices[5][0], isoVertices[5][1]);
     ctx.lineTo(isoVertices[6][0], isoVertices[6][1]);
     ctx.lineTo(isoVertices[2][0], isoVertices[2][1]);
-    ctx.lineTo(isoVertices[1][0], isoVertices[1][1]);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
-    // Side face
-    ctx.fillStyle = '#0891b2';
+    // Left face (darkest)
+    ctx.fillStyle = '#0e7490';
+    ctx.strokeStyle = '#155e75';
     ctx.beginPath();
-    ctx.moveTo(isoVertices[6][0], isoVertices[6][1]);
+    ctx.moveTo(isoVertices[0][0], isoVertices[0][1]);
+    ctx.lineTo(isoVertices[4][0], isoVertices[4][1]);
     ctx.lineTo(isoVertices[7][0], isoVertices[7][1]);
     ctx.lineTo(isoVertices[3][0], isoVertices[3][1]);
-    ctx.lineTo(isoVertices[2][0], isoVertices[2][1]);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -149,16 +163,16 @@ const StageCalculator = () => {
     const displayDepth = isMetric ? depth : (depth * 3.28084).toFixed(1);
     const displayHeight = isMetric ? height + 'mm' : height + 'ft';
 
-    // Width label
-    const widthMid = [(isoVertices[4][0] + isoVertices[5][0]) / 2, isoVertices[4][1] - 20];
+    // Width label (top back edge)
+    const widthMid = [(isoVertices[4][0] + isoVertices[5][0]) / 2, isoVertices[4][1] - 15];
     ctx.fillText(`${displayWidth}${unit}`, widthMid[0], widthMid[1]);
 
-    // Depth label
-    const depthMid = [(isoVertices[5][0] + isoVertices[6][0]) / 2, isoVertices[5][1] - 20];
+    // Depth label (top right edge)
+    const depthMid = [(isoVertices[5][0] + isoVertices[6][0]) / 2, isoVertices[5][1] - 15];
     ctx.fillText(`${displayDepth}${unit}`, depthMid[0], depthMid[1]);
 
-    // Height label
-    const heightMid = [isoVertices[5][0] + 30, (isoVertices[5][1] + isoVertices[1][1]) / 2];
+    // Height label (right edge)
+    const heightMid = [isoVertices[6][0] + 40, (isoVertices[2][1] + isoVertices[6][1]) / 2];
     ctx.fillText(displayHeight, heightMid[0], heightMid[1]);
   };
 
