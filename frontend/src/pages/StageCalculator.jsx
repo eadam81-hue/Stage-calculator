@@ -207,12 +207,31 @@ const StageCalculator = () => {
     ctx.fillText('PLAN VIEW (TOP DOWN)', canvasW / 2, 20);
   };
 
-  // Draw stage when dimensions change
+  // Draw stage when dimensions change (without panel details)
   useEffect(() => {
     if (canvasRef.current) {
-      drawStage(dimensions.width, dimensions.depth, dimensions.height);
+      drawStage(dimensions.width, dimensions.depth, dimensions.height, null);
     }
   }, [dimensions.width, dimensions.depth, dimensions.height, isMetric]);
+
+  // Update visualization after calculation with panel details
+  useEffect(() => {
+    if (result && canvasRef.current) {
+      // Find the deck component from parts list
+      const deckPart = result.parts_list.find(
+        p => (p.name.toLowerCase().includes('deck') || p.name.toLowerCase().includes('panel')) 
+        && !p.name.toLowerCase().includes('handrail')
+      );
+      
+      if (deckPart && deckPart.unit_width && deckPart.unit_depth) {
+        const deckPanels = {
+          panelWidth: deckPart.unit_width,
+          panelDepth: deckPart.unit_depth
+        };
+        drawStage(result.width, result.depth, result.height, deckPanels);
+      }
+    }
+  }, [result]);
 
   const handleCalculate = async () => {
     if (dimensions.width <= 0 || dimensions.depth <= 0 || dimensions.height <= 0) {
