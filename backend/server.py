@@ -745,7 +745,9 @@ async def calculate_stage(request: CalculationRequest):
                 total_price=total_part_price,
                 total_weight=total_part_weight,
                 has_shortfall=has_shortfall,
-                available_quantity=qty_available
+                available_quantity=qty_available,
+                unit_width=comp.get('width'),
+                unit_depth=comp.get('depth')
             ))
             
             total_price += total_part_price
