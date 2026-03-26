@@ -63,7 +63,7 @@ const StageCalculator = () => {
   const heightUnitLabel = isMetric ? 'mm' : 'ft';
   const areaUnit = isMetric ? 'm²' : 'ft²';
 
-  // Canvas drawing function for 2D isometric view
+  // Canvas drawing function for 2D plan view (top-down)
   const drawStage = (width, depth, height) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -73,114 +73,103 @@ const StageCalculator = () => {
     const canvasH = canvas.height;
     ctx.clearRect(0, 0, canvasW, canvasH);
 
-    // Convert height to meters for visualization
-    const heightM = isMetric ? height / 1000 : height * 0.3048;
-    const widthM = width;
-    const depthM = depth;
+    // Convert to numbers
+    const widthM = Number(width);
+    const depthM = Number(depth);
 
-    // Find the maximum dimension to scale appropriately
-    const maxDim = Math.max(widthM, depthM, heightM);
+    // Calculate scale to fit with padding
+    const padding = 80;
+    const availableW = canvasW - padding * 2;
+    const availableH = canvasH - padding * 2;
     
-    // Calculate scale - use a factor that leaves room for labels and padding
-    const availableSpace = Math.min(canvasW * 0.7, canvasH * 0.7);
-    const scale = availableSpace / maxDim;
+    const scaleX = availableW / widthM;
+    const scaleY = availableH / depthM;
+    const scale = Math.min(scaleX, scaleY);
 
-    // Center point
-    const centerX = canvasW / 2;
-    const centerY = canvasH / 2;
+    // Calculate rectangle dimensions and position (centered)
+    const rectW = widthM * scale;
+    const rectH = depthM * scale;
+    const rectX = (canvasW - rectW) / 2;
+    const rectY = (canvasH - rectH) / 2;
 
-    // Standard isometric projection angles
-    // For isometric: x goes right-down, y goes left-down, z goes up
-    const isoAngle = Math.PI / 6; // 30 degrees
-    const cos30 = Math.cos(isoAngle);
-    const sin30 = Math.sin(isoAngle);
+    // Draw the stage rectangle
+    ctx.fillStyle = '#06b6d4';
+    ctx.strokeStyle = '#0891b2';
+    ctx.lineWidth = 3;
+    ctx.fillRect(rectX, rectY, rectW, rectH);
+    ctx.strokeRect(rectX, rectY, rectW, rectH);
 
-    // Isometric projection function
-    const toIso = (x, y, z) => {
-      // Standard isometric: 
-      // screenX = (x - y) * cos(30°)
-      // screenY = (x + y) * sin(30°) - z
-      const screenX = (x - y) * cos30 * scale;
-      const screenY = ((x + y) * sin30 - z) * scale;
-      return [centerX + screenX, centerY + screenY];
-    };
+    // Add a subtle grid pattern
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
+    const gridSize = scale * 1; // 1m grid
+    
+    // Vertical grid lines
+    for (let i = 1; i < widthM; i++) {
+      const x = rectX + i * gridSize;
+      ctx.beginPath();
+      ctx.moveTo(x, rectY);
+      ctx.lineTo(x, rectY + rectH);
+      ctx.stroke();
+    }
+    
+    // Horizontal grid lines
+    for (let i = 1; i < depthM; i++) {
+      const y = rectY + i * gridSize;
+      ctx.beginPath();
+      ctx.moveTo(rectX, y);
+      ctx.lineTo(rectX + rectW, y);
+      ctx.stroke();
+    }
 
-    // Define the 8 vertices of the box
-    const verts = [
-      toIso(0, 0, 0),           // 0: bottom-back-left
-      toIso(widthM, 0, 0),      // 1: bottom-back-right
-      toIso(widthM, depthM, 0), // 2: bottom-front-right
-      toIso(0, depthM, 0),      // 3: bottom-front-left
-      toIso(0, 0, heightM),     // 4: top-back-left
-      toIso(widthM, 0, heightM),// 5: top-back-right
-      toIso(widthM, depthM, heightM), // 6: top-front-right
-      toIso(0, depthM, heightM) // 7: top-front-left
-    ];
-
-    // Draw the three visible faces
-    ctx.lineWidth = 2;
-
-    // Top face (lightest)
-    ctx.fillStyle = '#22d3ee';
-    ctx.strokeStyle = '#06b6d4';
-    ctx.beginPath();
-    ctx.moveTo(verts[4][0], verts[4][1]);
-    ctx.lineTo(verts[5][0], verts[5][1]);
-    ctx.lineTo(verts[6][0], verts[6][1]);
-    ctx.lineTo(verts[7][0], verts[7][1]);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // Right face (medium)
-    ctx.fillStyle = '#0891b2';
-    ctx.strokeStyle = '#0e7490';
-    ctx.beginPath();
-    ctx.moveTo(verts[1][0], verts[1][1]);
-    ctx.lineTo(verts[2][0], verts[2][1]);
-    ctx.lineTo(verts[6][0], verts[6][1]);
-    ctx.lineTo(verts[5][0], verts[5][1]);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // Left face (darkest)
-    ctx.fillStyle = '#0e7490';
-    ctx.strokeStyle = '#155e75';
-    ctx.beginPath();
-    ctx.moveTo(verts[3][0], verts[3][1]);
-    ctx.lineTo(verts[7][0], verts[7][1]);
-    ctx.lineTo(verts[4][0], verts[4][1]);
-    ctx.lineTo(verts[0][0], verts[0][1]);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // Add dimension labels
+    // Add dimension lines and labels
+    ctx.strokeStyle = '#1e293b';
     ctx.fillStyle = '#1e293b';
-    ctx.font = 'bold 14px sans-serif';
+    ctx.lineWidth = 2;
+    ctx.font = 'bold 16px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     const unit = isMetric ? 'm' : 'ft';
-    const displayWidth = isMetric ? Number(width).toFixed(1) : (Number(width) * 3.28084).toFixed(1);
-    const displayDepth = isMetric ? Number(depth).toFixed(1) : (Number(depth) * 3.28084).toFixed(1);
-    const displayHeight = isMetric ? height + 'mm' : height + 'ft';
+    const displayWidth = isMetric ? widthM.toFixed(1) : (widthM * 3.28084).toFixed(1);
+    const displayDepth = isMetric ? depthM.toFixed(1) : (depthM * 3.28084).toFixed(1);
 
-    // Width label (back top edge)
-    const widthX = (verts[4][0] + verts[5][0]) / 2;
-    const widthY = (verts[4][1] + verts[5][1]) / 2 - 15;
-    ctx.fillText(`${displayWidth}${unit}`, widthX, widthY);
+    // Width dimension (bottom)
+    const widthY = rectY + rectH + 40;
+    // Horizontal line
+    ctx.beginPath();
+    ctx.moveTo(rectX, widthY - 10);
+    ctx.lineTo(rectX, widthY + 10);
+    ctx.moveTo(rectX, widthY);
+    ctx.lineTo(rectX + rectW, widthY);
+    ctx.moveTo(rectX + rectW, widthY - 10);
+    ctx.lineTo(rectX + rectW, widthY + 10);
+    ctx.stroke();
+    // Label
+    ctx.fillText(`WIDTH: ${displayWidth}${unit}`, rectX + rectW / 2, widthY + 25);
 
-    // Depth label (right top edge)
-    const depthX = (verts[5][0] + verts[6][0]) / 2;
-    const depthY = (verts[5][1] + verts[6][1]) / 2 - 15;
-    ctx.fillText(`${displayDepth}${unit}`, depthX, depthY);
+    // Depth dimension (right)
+    const depthX = rectX + rectW + 40;
+    // Vertical line
+    ctx.beginPath();
+    ctx.moveTo(depthX - 10, rectY);
+    ctx.lineTo(depthX + 10, rectY);
+    ctx.moveTo(depthX, rectY);
+    ctx.lineTo(depthX, rectY + rectH);
+    ctx.moveTo(depthX - 10, rectY + rectH);
+    ctx.lineTo(depthX + 10, rectY + rectH);
+    ctx.stroke();
+    // Label (rotated)
+    ctx.save();
+    ctx.translate(depthX + 25, rectY + rectH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(`DEPTH: ${displayDepth}${unit}`, 0, 0);
+    ctx.restore();
 
-    // Height label (right vertical edge)
-    const heightX = (verts[2][0] + verts[6][0]) / 2 + 35;
-    const heightY = (verts[2][1] + verts[6][1]) / 2;
-    ctx.fillText(displayHeight, heightX, heightY);
+    // Add "PLAN VIEW" label at top
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.fillText('PLAN VIEW (TOP DOWN)', canvasW / 2, 20);
   };
 
   // Draw stage when dimensions change
