@@ -77,6 +77,8 @@ class CalculatedPart(BaseModel):
     total_weight: float
     has_shortfall: bool = False
     available_quantity: int = 0
+    unit_width: Optional[float] = None  # Component width in meters
+    unit_depth: Optional[float] = None  # Component depth in meters
 
 class Calculation(BaseModel):
     model_config = ConfigDict(extra="ignore")
