@@ -500,7 +500,7 @@ const StageCalculator = () => {
                   3D Stage Visualization
                 </CardTitle>
                 <CardDescription>
-                  Simple 2D isometric view of your stage
+                  2D plan view showing stage footprint
                 </CardDescription>
               </CardHeader>
               <CardContent>
