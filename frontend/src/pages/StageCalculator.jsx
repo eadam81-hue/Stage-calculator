@@ -29,7 +29,7 @@ const StageCalculator = () => {
   const [dimensions, setDimensions] = useState({
     width: 10,
     depth: 8,
-    height: 1500  // Height in mm for metric
+    height: 1000  // Height in mm for metric
   });
   const [isOutdoor, setIsOutdoor] = useState(false);
   const [isMetric, setIsMetric] = useState(true); // true = meters, false = feet
