@@ -551,7 +551,7 @@ const StageCalculator = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Box className="h-5 w-5 text-cyan-600" />
-                  3D Stage Visualization
+                  2D Stage Visualization
                 </CardTitle>
                 <CardDescription>
                   2D plan view showing stage footprint
