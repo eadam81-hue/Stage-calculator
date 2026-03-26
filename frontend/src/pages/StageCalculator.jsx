@@ -572,14 +572,22 @@ const StageCalculator = () => {
                       Width × Depth × Height
                     </p>
                     <p className="text-sm text-slate-700 mt-1">
-                      {dimensions.width}m ({(dimensions.width * 3.28084).toFixed(2)}ft) × {dimensions.depth}m ({(dimensions.depth * 3.28084).toFixed(2)}ft) × {isMetric ? dimensions.height + 'mm' : dimensions.height + 'ft'} ({isMetric ? (dimensions.height / 304.8).toFixed(2) + 'ft' : (dimensions.height * 304.8).toFixed(0) + 'mm'})
+                      {result ? (
+                        <>
+                          {result.width.toFixed(2)}m ({(result.width * 3.28084).toFixed(2)}ft) × {result.depth.toFixed(2)}m ({(result.depth * 3.28084).toFixed(2)}ft) × {(result.height * 1000).toFixed(0)}mm ({(result.height * 3.28084).toFixed(2)}ft)
+                        </>
+                      ) : (
+                        <>
+                          {dimensions.width}m ({(dimensions.width * 3.28084).toFixed(2)}ft) × {dimensions.depth}m ({(dimensions.depth * 3.28084).toFixed(2)}ft) × {isMetric ? dimensions.height + 'mm' : dimensions.height + 'ft'} ({isMetric ? (dimensions.height / 304.8).toFixed(2) + 'ft' : (dimensions.height * 304.8).toFixed(0) + 'mm'})
+                        </>
+                      )}
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 bg-slate-50 rounded-lg">
                       <p className="text-sm text-slate-500">Area</p>
                       <p className="text-xl font-semibold text-slate-900">
-                        {(dimensions.width * dimensions.depth).toFixed(2)}{areaUnit}
+                        {result ? (result.width * result.depth).toFixed(2) : (dimensions.width * dimensions.depth).toFixed(2)}{areaUnit}
                       </p>
                     </div>
                     <div className="p-3 bg-slate-50 rounded-lg">
