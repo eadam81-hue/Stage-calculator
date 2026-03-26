@@ -63,8 +63,8 @@ const StageCalculator = () => {
   const heightUnitLabel = isMetric ? 'mm' : 'ft';
   const areaUnit = isMetric ? 'm²' : 'ft²';
 
-  // Canvas drawing function for 2D plan view (top-down)
-  const drawStage = (width, depth, height) => {
+  // Canvas drawing function for 2D plan view (top-down) with panel grid
+  const drawStage = (width, depth, height, deckPanels = null) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -92,34 +92,73 @@ const StageCalculator = () => {
     const rectX = (canvasW - rectW) / 2;
     const rectY = (canvasH - rectH) / 2;
 
-    // Draw the stage rectangle
-    ctx.fillStyle = '#06b6d4';
-    ctx.strokeStyle = '#0891b2';
-    ctx.lineWidth = 3;
-    ctx.fillRect(rectX, rectY, rectW, rectH);
-    ctx.strokeRect(rectX, rectY, rectW, rectH);
+    // If we have deck panel info from calculation, draw individual panels
+    if (deckPanels && deckPanels.panelWidth && deckPanels.panelDepth) {
+      const panelW = deckPanels.panelWidth;
+      const panelD = deckPanels.panelDepth;
+      const panelsWide = Math.round(widthM / panelW);
+      const panelsDeep = Math.round(depthM / panelD);
 
-    // Add a subtle grid pattern
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.lineWidth = 1;
-    const gridSize = scale * 1; // 1m grid
-    
-    // Vertical grid lines
-    for (let i = 1; i < widthM; i++) {
-      const x = rectX + i * gridSize;
-      ctx.beginPath();
-      ctx.moveTo(x, rectY);
-      ctx.lineTo(x, rectY + rectH);
-      ctx.stroke();
-    }
-    
-    // Horizontal grid lines
-    for (let i = 1; i < depthM; i++) {
-      const y = rectY + i * gridSize;
-      ctx.beginPath();
-      ctx.moveTo(rectX, y);
-      ctx.lineTo(rectX + rectW, y);
-      ctx.stroke();
+      // Draw individual deck panels
+      for (let x = 0; x < panelsWide; x++) {
+        for (let y = 0; y < panelsDeep; y++) {
+          const px = rectX + (x * panelW * scale);
+          const py = rectY + (y * panelD * scale);
+          const pw = panelW * scale;
+          const ph = panelD * scale;
+
+          // Panel fill
+          ctx.fillStyle = '#06b6d4';
+          ctx.fillRect(px, py, pw, ph);
+
+          // Panel border (black)
+          ctx.strokeStyle = '#1e293b';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(px, py, pw, ph);
+
+          // Add subtle inner detail
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(px + 3, py + 3, pw - 6, ph - 6);
+        }
+      }
+
+      // Add panel size label in center
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const labelText = `${panelW.toFixed(1)}m × ${panelD.toFixed(1)}m panels`;
+      ctx.fillText(labelText, rectX + rectW / 2, rectY + rectH / 2);
+      
+    } else {
+      // Default view - solid rectangle with grid
+      ctx.fillStyle = '#06b6d4';
+      ctx.strokeStyle = '#0891b2';
+      ctx.lineWidth = 3;
+      ctx.fillRect(rectX, rectY, rectW, rectH);
+      ctx.strokeRect(rectX, rectY, rectW, rectH);
+
+      // Add a subtle grid pattern (1m)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 1;
+      const gridSize = scale * 1;
+      
+      for (let i = 1; i < widthM; i++) {
+        const x = rectX + i * gridSize;
+        ctx.beginPath();
+        ctx.moveTo(x, rectY);
+        ctx.lineTo(x, rectY + rectH);
+        ctx.stroke();
+      }
+      
+      for (let i = 1; i < depthM; i++) {
+        const y = rectY + i * gridSize;
+        ctx.beginPath();
+        ctx.moveTo(rectX, y);
+        ctx.lineTo(rectX + rectW, y);
+        ctx.stroke();
+      }
     }
 
     // Add dimension lines and labels
@@ -136,7 +175,6 @@ const StageCalculator = () => {
 
     // Width dimension (bottom)
     const widthY = rectY + rectH + 40;
-    // Horizontal line
     ctx.beginPath();
     ctx.moveTo(rectX, widthY - 10);
     ctx.lineTo(rectX, widthY + 10);
@@ -145,12 +183,10 @@ const StageCalculator = () => {
     ctx.moveTo(rectX + rectW, widthY - 10);
     ctx.lineTo(rectX + rectW, widthY + 10);
     ctx.stroke();
-    // Label
     ctx.fillText(`WIDTH: ${displayWidth}${unit}`, rectX + rectW / 2, widthY + 25);
 
     // Depth dimension (right)
     const depthX = rectX + rectW + 40;
-    // Vertical line
     ctx.beginPath();
     ctx.moveTo(depthX - 10, rectY);
     ctx.lineTo(depthX + 10, rectY);
@@ -159,7 +195,6 @@ const StageCalculator = () => {
     ctx.moveTo(depthX - 10, rectY + rectH);
     ctx.lineTo(depthX + 10, rectY + rectH);
     ctx.stroke();
-    // Label (rotated)
     ctx.save();
     ctx.translate(depthX + 25, rectY + rectH / 2);
     ctx.rotate(-Math.PI / 2);
